@@ -31,7 +31,7 @@ pip install -r requirements.txt
 
 ```
 
-Rode o aplicativo. Para acessar o dashboard, espere cerca de um minuto e clique no link http://127.0.0.1:8050.
+Rode o aplicativo. Para acessar o dashboard, espere cerca de um minuto e clique no link http://127.0.0.1:8050. A demora é causada pelo tamanho da base de dados do Ministério da Saúde, com mais de 100.000 linhas.
 
 ```
 
