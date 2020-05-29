@@ -7,7 +7,7 @@ Os dados utilizados são os do [Ministério da Saúde](https://covid.saude.gov.b
 
 A grande inspiração para o design foi [este projeto](https://dash-gallery.plotly.host/dash-oil-and-gas/), cuja documentação está disponível [aqui](https://github.com/plotly/dash-sample-apps/tree/master/apps/dash-oil-and-gas).
 
-##Acesso online
+## Acesso online
 
 O painel pode ser visualizado [nesta URL](covid-19-por-municipio.herokuapp.com)
 
