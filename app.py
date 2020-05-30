@@ -1,6 +1,5 @@
 #importando os módulos necessários
 import plotly
-import plotly.offline as py
 import plotly.graph_objs as go
 
 import pandas as pd 
@@ -13,11 +12,14 @@ import dash_html_components as html
 from dash.dependencies import Input, Output, State
         
 #coletando a base de dados mais recente:
-df = pd.read_csv("https://raw.githubusercontent.com/vnery5/Database-Covid-19/master/dataset_covid_19.csv")
+df = pd.read_csv("https://raw.githubusercontent.com/vnery5/Covid_19_por_Cidade/master/Dados/dataset_covid_19.csv")
 
-#limpando a base de dados
+##limpando a base de dados
+#renomeando as colunas
 df.rename({'populacaoTCU2019':'populacao','casosAcumulado':'Casos','obitosAcumulado':'Óbitos','data':'Data'}, axis = 1, inplace = True)
+#excluindo linhas sem especificações de municípios
 df.dropna(subset = ['municipio'], axis = 0, inplace = True)
+#transformando a coluna de data para o tipo apropriado
 df['Data'] = pd.to_datetime(df['Data'])
 
 #definindo uma lista de todos os estados e suas siglas pra ser usado no dropwdown
@@ -27,7 +29,7 @@ lista_estados = [
     'Mato Grosso do Sul','Mato Grosso','Pará','Paraíba','Pernambuco','Piauí','Paraná','Rio de Janeiro','Rio Grande do Norte',
     'Rondônia','Roraima','Rio Grande do Sul','Santa Catarina','Sergipe','São Paulo','Tocantins'
 ]
-##fazendo o dashboard
+##fazendo o dashboard e criando o servidor Flask
 app = dash.Dash(__name__, meta_tags=[{"name": "viewport", "content": "width=device-width"}])
 server = app.server
 
@@ -134,11 +136,11 @@ app.layout = html.Div(
                                     style = {"margin-top":"25px"}
                                 ),
                                 html.P(
-                                    "Criado com Python (Pandas, Plotly e Dash)."
+                                    "Criado com Python (Pandas, Plotly e Dash) usando os dados mais recentes do Ministério da Saúde."
                                 ),
                                 html.P(
                                     """Para saber mais sobre o autor ou acessar o portal do Ministério
-                                    da Saúde sobre o Covid-19, clique nos botões no cantos superior esquerdo/direito."""
+                                    da Saúde sobre a Covid-19, clique nos botões no cantos superior esquerdo/direito."""
                                 ),
                             ],
                         ),
@@ -224,7 +226,7 @@ app.layout = html.Div(
     State('opcao_casos_ou_mortes','value')]
 )
 def Atualizar(n_clicks,cidade,estado,opcao):
-    #coletando o nome da cidade
+    #coletando o nome da cidade e controlando para o nome ficar formatado da forma apropriada
     if " " in cidade:
         cidade = string.capwords(str(cidade))
     else:
