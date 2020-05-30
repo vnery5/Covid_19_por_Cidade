@@ -5,6 +5,7 @@ import plotly.graph_objs as go
 
 import pandas as pd 
 import numpy as np
+import string
 
 import dash
 import dash_core_components as dcc
@@ -54,7 +55,7 @@ app.layout = html.Div(
                                     style={"margin-bottom": "0px"},
                                 ),
                                 html.H5(
-                                    "Painel Interativo com Indicadores sobre o Covid-19", 
+                                    "Painel Interativo com Indicadores sobre a Covid-19", 
                                     style={"margin-top": "0px"}
                                 ),
                             ]
@@ -66,7 +67,7 @@ app.layout = html.Div(
                 html.Div(
                     [
                         html.A(
-                            html.Button("Mais dados sobre o Covid-19", id="minsaude-button"), #botão superior direito
+                            html.Button("Mais dados sobre a Covid-19", id="minsaude-button"), #botão superior direito
                             href="https://covid.saude.gov.br",
                         )
                     ],
@@ -83,7 +84,7 @@ app.layout = html.Div(
                 html.Div(
                     [
                         html.P(
-                            "Qual município você deseja visualizar? Lembre-se de colocar os acentos e as letras maiúsculas!",
+                            "Qual município você deseja visualizar? Lembre-se de colocar os acentos!",
                             className="control_label",
                         ),
                         dcc.Input( #caixa de texto
@@ -225,7 +226,7 @@ app.layout = html.Div(
 def Atualizar(n_clicks,cidade,estado,opcao):
     #coletando o nome da cidade
     if " " in cidade:
-        cidade = str(cidade)
+        cidade = string.capwords(str(cidade))
     else:
         cidade = str(cidade).capitalize()
     #gerando o dataframe com os casos e óbitos só daquela cidade
