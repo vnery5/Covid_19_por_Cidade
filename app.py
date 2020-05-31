@@ -11,7 +11,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output, State
         
-#coletando a base de dados mais recente:
+#coletando a base de dados mais recente (29/05/2020):
 df = pd.read_csv("https://raw.githubusercontent.com/vnery5/Covid_19_por_Cidade/master/Dados/dataset_covid_19.csv")
 
 ##limpando a base de dados
