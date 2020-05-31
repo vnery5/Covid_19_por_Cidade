@@ -11,7 +11,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output, State
         
-#coletando a base de dados mais recente (29/05/2020):
+#coletando a base de dados mais recente:
 df = pd.read_csv("https://raw.githubusercontent.com/vnery5/Covid_19_por_Cidade/master/Dados/dataset_covid_19.csv")
 
 ##limpando a base de dados
@@ -136,7 +136,8 @@ app.layout = html.Div(
                                     style = {"margin-top":"25px"}
                                 ),
                                 html.P(
-                                    "Criado com Python (Pandas, Plotly e Dash) usando os dados mais recentes do Ministério da Saúde."
+                                    """Criado com Python usando os dados mais recentes do Ministério da Saúde. 
+                                    Atualizado em 31/05/2020."""
                                 ),
                                 html.P(
                                     """Para saber mais sobre o autor ou acessar o portal do Ministério
