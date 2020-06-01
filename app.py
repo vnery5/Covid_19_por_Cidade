@@ -279,18 +279,21 @@ def Atualizar(n_clicks,cidade,estado,opcao):
             #criando as linhas de cenários
             fig.add_trace(
                 go.Scatter(x = df_cidade['Data'], y= casos_uma_semana, 
-                name = "Dobrando a cada semana (a partir do 1º caso)", line = dict(color = 'black',width = 3, dash = 'dot')) #formatando o nome da linha e o estilo da linha
+                name = "Dobrando a cada semana (a partir do 1º caso)", 
+                line = dict(color = 'black',width = 3, dash = 'dot')) #formatando o nome da linha e o estilo da linha
             )
             fig.add_trace(
                 go.Scatter(x = df_cidade['Data'], y= casos_dez_dias, 
-                name = "Dobrando a cada dez dias (a partir do 1º caso)", line = dict(color = 'purple',width = 3, dash = 'dot')) 
+                name = "Dobrando a cada dez dias (a partir do 1º caso)", 
+                line = dict(color = 'purple',width = 3, dash = 'dot')) 
             )
             fig.add_trace(
                 go.Scatter(x = df_cidade['Data'], y= casos_duas_semanas, 
-                name = "Dobrando a cada duas semanas (a partir do 1º caso)", line = dict(color = 'green',width = 3, dash = 'dot'))
+                name = "Dobrando a cada duas semanas (a partir do 1º caso)", 
+                line = dict(color = 'green',width = 3, dash = 'dot'))
             )
             #nomeando o eixo y e ajustando sua range
-            fig.update_yaxes(title_text = "Casos", range = [num_inicial_de_casos, 1.05*num_de_casos])
+            fig.update_yaxes(title_text = "Casos", range = [num_inicial_de_casos, 1.1*num_de_casos])
             #ajustando a posição da legenda, dando título à figura e ajustando suas dimensões
             fig.update_layout(
                 plot_bgcolor="#F9F9F9",
@@ -323,19 +326,22 @@ def Atualizar(n_clicks,cidade,estado,opcao):
             if num_de_mortes > 0:
                 fig.add_trace(
                     go.Scatter(x = df_cidade_prim_morte['Data'], y = obitos_uma_semana,  
-                    name = "Dobrando a cada semana (a partir do 1º óbito)", line = dict(color = 'black', width = 3, dash = 'dot'))
+                    name = "Dobrando a cada semana (a partir do 1º óbito)", 
+                    line = dict(color = 'black', width = 3, dash = 'dot'))
                 )
                 fig.add_trace(
                     go.Scatter(x = df_cidade_prim_morte['Data'], y= obitos_dez_dias, 
-                    name = "Dobrando a cada dez dias (a partir do 1º óbito)", line = dict(color = 'purple',width = 3, dash = 'dot'))
+                    name = "Dobrando a cada dez dias (a partir do 1º óbito)", 
+                    line = dict(color = 'purple',width = 3, dash = 'dot'))
                 )
                 fig.add_trace(
                     go.Scatter(x = df_cidade_prim_morte['Data'], y= obitos_duas_semanas, 
-                    name = "Dobrando a cada duas semanas (a partir do 1º óbito)", line = dict(color = 'green',width = 3, dash = 'dot'))
+                    name = "Dobrando a cada duas semanas (a partir do 1º óbito)", 
+                    line = dict(color = 'green',width = 3, dash = 'dot'))
                 )
 
             #nomeando e ajustando a altura dos eixos y
-            fig.update_yaxes(title_text = "Mortes", range = [0, num_de_mortes + num_de_mortes/50])
+            fig.update_yaxes(title_text = "Mortes", range = [0, 1.1*num_de_mortes])
             #criando os botões de seleção temporal
             #ajustando a posição da legenda, dando título à figura e ajustando suas dimensões
             fig.update_layout(
