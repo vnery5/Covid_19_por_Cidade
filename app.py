@@ -154,7 +154,7 @@ app.layout = html.Div(
                         html.Div( #divisão de cima, que irá conter as estatísticas
                             [
                                 html.Div(
-                                    [html.H6(id="novos_casos_text"), html.P("Novo(s) Caso(s)")],
+                                    [html.H6(id="novos_casos_text"), html.P("Novos Casos")],
                                     id="novos_casos",
                                     className="mini_container",
                                 ),
@@ -164,7 +164,7 @@ app.layout = html.Div(
                                     className="mini_container",
                                 ),
                                 html.Div(
-                                    [html.H6(id="novas_mortes_text"), html.P("Novo(s) Óbito(s)")],
+                                    [html.H6(id="novas_mortes_text"), html.P("Novos Óbitos")],
                                     id="novas_mortes",
                                     className="mini_container",
                                 ),
