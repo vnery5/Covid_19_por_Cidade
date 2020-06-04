@@ -27,11 +27,6 @@ Loop
 
 Range("A1").Select
 
-ChDir "/Users/vinicius/Downloads/Dados Covid/"
-    ActiveWorkbook.SaveAs FileName:= _
-        "/Users/vinicius/Downloads/Dados Covid/dataset_covid_19.csv", FileFormat:= _
-        xlCSVUTF8, CreateBackup:=False
-
 Application.ScreenUpdating = True
 Application.Calculation = xlCalculationAutomatic
 
