@@ -137,7 +137,7 @@ app.layout = html.Div(
                                 ),
                                 html.P(
                                     """Criado com Python usando os dados mais recentes do Ministério da Saúde. 
-                                    Atualizado em 02/06/2020."""
+                                    Atualizado em 04/06/2020."""
                                 ),
                                 html.P(
                                     """Para saber mais sobre o autor ou acessar o portal do Ministério
