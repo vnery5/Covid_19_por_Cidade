@@ -4,6 +4,11 @@ Sub limpar()
 Application.ScreenUpdating = False
 Application.Calculation = xlCalculationManual
 
+Range("H2").Select
+Range(Selection, Selection.End(xlDown)).Select
+Selection.NumberFormat = "yyyy-mm-dd;@"
+Range("H2").Select
+  
 Dim i As Long
 i = 1
 
