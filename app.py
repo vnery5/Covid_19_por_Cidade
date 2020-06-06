@@ -5,6 +5,9 @@ import plotly.graph_objs as go
 import pandas as pd 
 import numpy as np
 import string
+import locale
+#formatando os numeros
+locale.setlocale(locale.LC_ALL, '')
 
 import dash
 import dash_core_components as dcc
@@ -17,14 +20,20 @@ df = pd.read_csv("https://raw.githubusercontent.com/vnery5/Covid_19_por_Cidade/m
 ##limpando a base de dados
 #renomeando as colunas
 df.rename({'populacaoTCU2019':'populacao','casosAcumulado':'Casos','obitosAcumulado':'Óbitos','data':'Data'}, axis = 1, inplace = True)
-#excluindo linhas sem especificações de municípios
-df.dropna(subset = ['municipio'], axis = 0, inplace = True)
 #transformando a coluna de data para o tipo apropriado
 df['Data'] = pd.to_datetime(df['Data'])
+df.dropna(subset = ['populacao'], axis = 0, inplace = True)
+
+
 
 #definindo uma lista de todos os estados e suas siglas pra ser usado no dropwdown
-lista_estados_sigla = ['AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO']
+lista_estados_sigla = [
+    'Brasil',
+    'AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG', 'MS', 'MT', 'PA',
+    'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO'
+]
 lista_estados = [
+    'Brasil',
     'Acre','Alagoas','Amazonas','Amapá','Bahia','Ceará','Distrito Federal','Espírito Santo','Goiás','Maranhão','Minas Gerais',
     'Mato Grosso do Sul','Mato Grosso','Pará','Paraíba','Pernambuco','Piauí','Paraná','Rio de Janeiro','Rio Grande do Norte',
     'Rondônia','Roraima','Rio Grande do Sul','Santa Catarina','Sergipe','São Paulo','Tocantins'
@@ -86,25 +95,25 @@ app.layout = html.Div(
                 html.Div(
                     [
                         html.P(
-                            "Qual município você deseja visualizar? Lembre-se de colocar os acentos!",
+                            "Qual município você deseja visualizar?",
                             className="control_label",
                         ),
                         dcc.Input( #caixa de texto
                             id="cidade_input",
                             type = "text",
-                            value = "Brasília",
-                            className = "dcc_control",
-                            placeholder = "Selecione um Munícipio"
+                            value = "",
+                            placeholder = "Deixe em branco para ver uma UF ou o Brasil",
+                            style = {'align':'center','justifyContent':'center'}
                         ),
                         html.P(
-                            "Selecione a UF do município escolhido:",
+                            "Selecione a UF do município escolhido ou a UF que deseja visualizar:",
                             className = "control_label"
                         ),
-                        dcc.Dropdown(  #seleção do estado
+                        dcc.Dropdown(  #seleção da UF/Brasil
                             id='opcao_de_estados',
                             options = [{'label': i, 'value': k} for i,k in dict(zip(lista_estados,lista_estados_sigla)).items()],
-                            value='DF',
-                            placeholder = "Selecione uma UF",
+                            value='Brasil',
+                            placeholder = "Selecione uma UF ou o Brasil",
                             style = {'align':'center','justifyContent':'center'}
                         ),
                         html.P(
@@ -123,7 +132,7 @@ app.layout = html.Div(
                             className = "control_label"
                         ),
                         html.Button( #botão de verificar
-                            id='botao_verificar', n_clicks=0, children='Gerar Gráfico e Estatísticas'
+                            id='botao_verificar', n_clicks=0, children='Pesquisar'
                         ),
                         html.Div(id="se_der_erro"),#pra caso der erro no gráfico, avisar o usuário aqui
                         html.Hr(), #divisória bonitinha
@@ -136,12 +145,12 @@ app.layout = html.Div(
                                     style = {"margin-top":"25px"}
                                 ),
                                 html.P(
-                                    """Criado com Python usando os dados mais recentes do Ministério da Saúde. 
-                                    Atualizado em 05/06/2020."""
+                                    """Você também pode deixar o campo do munícipio em branco, caso queira
+                                    visualizar os dados totais da UF selecionada no 2º campo."""
                                 ),
                                 html.P(
-                                    """Para saber mais sobre o autor ou acessar o portal do Ministério
-                                    da Saúde sobre a Covid-19, clique nos botões no cantos superior esquerdo/direito."""
+                                    """Criado com Python usando os dados mais recentes do Ministério da Saúde. 
+                                    Atualizado em 06/06/2020."""
                                 ),
                             ],
                         ),
@@ -227,14 +236,22 @@ app.layout = html.Div(
     State('opcao_casos_ou_mortes','value')]
 )
 def Atualizar(n_clicks,cidade,estado,opcao):
-    #coletando o nome da cidade e controlando para o nome ficar formatado da forma apropriada
-    if " " in cidade:
-        cidade = string.capwords(str(cidade))
+    #if para caso o Brasil ou um UF seja selecionada:
+    if cidade == "":
+        if estado == "Brasil":
+            df_cidade = df.loc[df['regiao'] == estado]
+        else:
+            df_cidade = df.loc[df['estado'] == estado]
+            df_cidade = df_cidade.loc[df_cidade['municipio'].isnull()]
     else:
-        cidade = str(cidade).capitalize()
-    #gerando o dataframe com os casos e óbitos só daquela cidade
-    df_cidade = df.loc[df['municipio'] == cidade]
-    df_cidade =df_cidade.loc[df_cidade['estado'] == estado]
+        #coletando o nome da cidade e controlando para o nome ficar formatado da forma apropriada
+        if " " in cidade:
+            cidade = string.capwords(str(cidade))
+        else:
+            cidade = str(cidade).capitalize()
+        #gerando o dataframe com os casos e óbitos só daquela cidade
+        df_cidade = df.loc[df['municipio'] == cidade]
+        df_cidade =df_cidade.loc[df_cidade['estado'] == estado]
 
     #controle de erros
     if df_cidade.empty == True:
@@ -264,11 +281,27 @@ def Atualizar(n_clicks,cidade,estado,opcao):
         fig = go.Figure()
 
         if opcao == "Casos":
-            #capturando o número inicial de casos (referente à primeira data disponível) e criando as funções das retas auxiliares
-            num_inicial_de_casos = int(df_cidade['Casos'].head(1))
-            casos_uma_semana = [round(num_inicial_de_casos * (2 ** (x/7)),0) for x in eixo_x]
-            casos_duas_semanas  = [round(num_inicial_de_casos * (2 ** (x/14)),0) for x in eixo_x]
-            casos_dez_dias  = [round(num_inicial_de_casos * (2 ** (x/10)),0) for x in eixo_x]
+            #se a pessoa selecionar um estado ou o Brasil:
+            if cidade == "":
+                df_cidade_prim_caso = df_cidade.loc[df_cidade['Casos'] > 1000]
+                num_inicial_de_casos = int(df_cidade_prim_caso['Casos'].head(1))
+                casos_uma_semana = [round(num_inicial_de_casos * (2 ** (x/7)),0) for x in eixo_x]
+                legendacasos1 = "Dobrando a cada semana (a partir do 1000º caso)"
+                casos_dez_dias  = [round(num_inicial_de_casos * (2 ** (x/10)),0) for x in eixo_x]
+                legendacasos2 = "Dobrando a cada dez dias (a partir do 1000º caso)"
+                casos_duas_semanas  = [round(num_inicial_de_casos * (2 ** (x/14)),0) for x in eixo_x]
+                legendacasos3 = "Dobrando a cada duas semanas (a partir do 1000º caso)"
+
+            else:
+                #capturando o número inicial de casos (referente à primeira data disponível) 
+                #e criando as funções das retas auxiliares
+                num_inicial_de_casos = int(df_cidade['Casos'].head(1))
+                casos_uma_semana = [round(num_inicial_de_casos * (2 ** (x/7)),0) for x in eixo_x]
+                legendacasos1 = "Dobrando a cada semana (a partir do 1º caso)"
+                casos_dez_dias  = [round(num_inicial_de_casos * (2 ** (x/10)),0) for x in eixo_x]
+                legendacasos2 = "Dobrando a cada dez dias (a partir do 1º caso)"
+                casos_duas_semanas  = [round(num_inicial_de_casos * (2 ** (x/14)),0) for x in eixo_x]
+                legendacasos3 = "Dobrando a cada duas semanas (a partir do 1º caso)"
 
             #gráfico de casos
             fig.add_trace(
@@ -276,46 +309,117 @@ def Atualizar(n_clicks,cidade,estado,opcao):
                 name = "Casos", line = dict(color = 'red',width = 3.5), 
                 fill = 'tozeroy', fillcolor = 'rgba(255,0,0,0.1)')
             )
-            #criando as linhas de cenários
-            fig.add_trace(
-                go.Scatter(x = df_cidade['Data'], y= casos_uma_semana, 
-                name = "Dobrando a cada semana (a partir do 1º caso)", 
-                line = dict(color = 'black',width = 3, dash = 'dot')) #formatando o nome da linha e o estilo da linha
-            )
-            fig.add_trace(
-                go.Scatter(x = df_cidade['Data'], y= casos_dez_dias, 
-                name = "Dobrando a cada dez dias (a partir do 1º caso)", 
-                line = dict(color = 'purple',width = 3, dash = 'dot')) 
-            )
-            fig.add_trace(
-                go.Scatter(x = df_cidade['Data'], y= casos_duas_semanas, 
-                name = "Dobrando a cada duas semanas (a partir do 1º caso)", 
-                line = dict(color = 'green',width = 3, dash = 'dot'))
-            )
+            ##criando as linhas de cenários
+            #caso seja uma UF
+            if cidade == "":
+                fig.add_trace(
+                    go.Scatter(x = df_cidade_prim_caso['Data'], y= casos_uma_semana, 
+                    name = legendacasos1, 
+                    line = dict(color = 'black',width = 3, dash = 'dot')) #formatando o nome da linha e o estilo da linha
+                )
+                fig.add_trace(
+                    go.Scatter(x = df_cidade_prim_caso['Data'], y= casos_dez_dias, 
+                    name = legendacasos2, 
+                    line = dict(color = 'purple',width = 3, dash = 'dot')) 
+                )
+                fig.add_trace(
+                    go.Scatter(x = df_cidade_prim_caso['Data'], y= casos_duas_semanas, 
+                    name = legendacasos3, 
+                    line = dict(color = 'green',width = 3, dash = 'dot'))
+                )
+            else:
+                fig.add_trace(
+                    go.Scatter(x = df_cidade['Data'], y= casos_uma_semana, 
+                    name = legendacasos1, 
+                    line = dict(color = 'black',width = 3, dash = 'dot')) #formatando o nome da linha e o estilo da linha
+                )
+                fig.add_trace(
+                    go.Scatter(x = df_cidade['Data'], y= casos_dez_dias, 
+                    name = legendacasos2, 
+                    line = dict(color = 'purple',width = 3, dash = 'dot')) 
+                )
+                fig.add_trace(
+                    go.Scatter(x = df_cidade['Data'], y= casos_duas_semanas, 
+                    name = legendacasos3, 
+                    line = dict(color = 'green',width = 3, dash = 'dot'))
+                )
             #nomeando o eixo y e ajustando sua range
-            fig.update_yaxes(title_text = "Casos", range = [num_inicial_de_casos, 1.1*num_de_casos])
-            #ajustando a posição da legenda, dando título à figura e ajustando suas dimensões
-            fig.update_layout(
-                plot_bgcolor="#F9F9F9",
-                paper_bgcolor="#F9F9F9",
-                legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
-                title ={
-                    'text': f"Número de Casos em {cidade}-{uf} ({data_atual})",
-                    'y':0.96, 'x': 0.96, 'xanchor':'right', 'yanchor':'top'
-                },
-                margin=dict(l=30, r=30, t=40, b=20)
-            )
+            fig.update_yaxes(title_text = "Casos", range = [0, 1.1*num_de_casos])
+
+            ##ajustando a posição da legenda, dando título à figura e ajustando suas dimensões
+            #caso a pessoa selecione uma UF ou o Brasil:
+            if cidade == "":
+                if estado == "Brasil":
+                    fig.update_layout(
+                        plot_bgcolor="#F9F9F9",
+                        paper_bgcolor="#F9F9F9",
+                        legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
+                        title ={
+                            'text': f"Número de Casos no {estado} ({data_atual})",
+                            'y':0.96, 'x': 0.96, 'xanchor':'right', 'yanchor':'top'
+                        },
+                        margin=dict(l=30, r=30, t=40, b=20)
+                    )
+                else:
+                    uf = lista_estados[lista_estados_sigla.index(estado)]
+                    fig.update_layout(
+                        plot_bgcolor="#F9F9F9",
+                        paper_bgcolor="#F9F9F9",
+                        legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
+                        title ={
+                            'text': f"Número de Casos em {uf} ({data_atual})",
+                            'y':0.96, 'x': 0.96, 'xanchor':'right', 'yanchor':'top'
+                        },
+                        margin=dict(l=30, r=30, t=40, b=20)
+                    )
+            #caso seja um munícipio
+            else:
+                fig.update_layout(
+                    plot_bgcolor="#F9F9F9",
+                    paper_bgcolor="#F9F9F9",
+                    legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
+                    title ={
+                        'text': f"Número de Casos em {cidade}-{uf} ({data_atual})",
+                        'y':0.96, 'x': 0.96, 'xanchor':'right', 'yanchor':'top'
+                    },
+                    margin=dict(l=30, r=30, t=40, b=20)
+                )
 
 
         else:
-            #capturando o número inicial de óbitos (referente à primeira data disponível) e criando as funções das retas auxiliares
-            if num_de_mortes > 0:
-                df_cidade_prim_morte = df_cidade.loc[df_cidade['Óbitos'] > 0]
-                num_inicial_de_obitos = int(df_cidade_prim_morte['Óbitos'].head(1))
-                obitos_uma_semana = [round(num_inicial_de_obitos * (2 ** (x/7)),0) for x in eixo_x]
-                obitos_duas_semanas  = [round(num_inicial_de_obitos * (2 ** (x/14)),0) for x in eixo_x]
-                obitos_dez_dias  = [round(num_inicial_de_obitos * (2 ** (x/10)),0) for x in eixo_x]
-
+            #caso a pessoa selecione uma UF ou o Brasil:
+            if cidade == "":
+                if estado == "Brasil":
+                    df_cidade_prim_morte = df_cidade.loc[df_cidade['Óbitos'] > 1000]
+                    num_inicial_de_obitos = int(df_cidade_prim_morte['Óbitos'].head(1))
+                    obitos_uma_semana = [round(num_inicial_de_obitos * (2 ** (x/7)),0) for x in eixo_x]
+                    legendaobitos1 = "Dobrando a cada semana (a partir do 1000º óbito)"
+                    obitos_dez_dias  = [round(num_inicial_de_obitos * (2 ** (x/10)),0) for x in eixo_x]
+                    legendaobitos2 = "Dobrando a cada dez dias (a partir do 1000º óbito)"
+                    obitos_duas_semanas  = [round(num_inicial_de_obitos * (2 ** (x/14)),0) for x in eixo_x]
+                    legendaobitos3 = "Dobrando a cada duas semanas (a partir do 1000º óbito)"
+                else:
+                    df_cidade_prim_morte = df_cidade.loc[df_cidade['Óbitos'] > 100]
+                    num_inicial_de_obitos = int(df_cidade_prim_morte['Óbitos'].head(1))
+                    obitos_uma_semana = [round(num_inicial_de_obitos * (2 ** (x/7)),0) for x in eixo_x]
+                    legendaobitos1 = "Dobrando a cada semana (a partir do 100º óbito)"
+                    obitos_dez_dias  = [round(num_inicial_de_obitos * (2 ** (x/10)),0) for x in eixo_x]
+                    legendaobitos2 = "Dobrando a cada dez dias (a partir do 100º óbito)"
+                    obitos_duas_semanas  = [round(num_inicial_de_obitos * (2 ** (x/14)),0) for x in eixo_x]
+                    legendaobitos3 = "Dobrando a cada duas semanas (a partir do 100º óbito)"
+                
+            else:
+                #capturando o número inicial de óbitos (referente à primeira data disponível) e criando as funções das retas auxiliares
+                if num_de_mortes > 0:
+                    df_cidade_prim_morte = df_cidade.loc[df_cidade['Óbitos'] > 0]
+                    num_inicial_de_obitos = int(df_cidade_prim_morte['Óbitos'].head(1))
+                    obitos_uma_semana = [round(num_inicial_de_obitos * (2 ** (x/7)),0) for x in eixo_x]
+                    legendaobitos1 = "Dobrando a cada semana (a partir do 1º óbito)"
+                    obitos_dez_dias  = [round(num_inicial_de_obitos * (2 ** (x/10)),0) for x in eixo_x]
+                    legendaobitos2 = "Dobrando a cada dez dias (a partir do 1º óbito)"
+                    obitos_duas_semanas  = [round(num_inicial_de_obitos * (2 ** (x/14)),0) for x in eixo_x]
+                    legendaobitos3 = "Dobrando a cada duas semanas (a partir do 1º óbito)"
+                
             #gráfico de óbitos
             fig.add_trace(
                 go.Scatter(x = df_cidade['Data'], y= df_cidade['Óbitos'], 
@@ -326,34 +430,61 @@ def Atualizar(n_clicks,cidade,estado,opcao):
             if num_de_mortes > 0:
                 fig.add_trace(
                     go.Scatter(x = df_cidade_prim_morte['Data'], y = obitos_uma_semana,  
-                    name = "Dobrando a cada semana (a partir do 1º óbito)", 
+                    name = legendaobitos1, 
                     line = dict(color = 'black', width = 3, dash = 'dot'))
                 )
                 fig.add_trace(
                     go.Scatter(x = df_cidade_prim_morte['Data'], y= obitos_dez_dias, 
-                    name = "Dobrando a cada dez dias (a partir do 1º óbito)", 
+                    name = legendaobitos2, 
                     line = dict(color = 'purple',width = 3, dash = 'dot'))
                 )
                 fig.add_trace(
                     go.Scatter(x = df_cidade_prim_morte['Data'], y= obitos_duas_semanas, 
-                    name = "Dobrando a cada duas semanas (a partir do 1º óbito)", 
+                    name = legendaobitos3, 
                     line = dict(color = 'green',width = 3, dash = 'dot'))
                 )
 
             #nomeando e ajustando a altura dos eixos y
             fig.update_yaxes(title_text = "Mortes", range = [0, 1.1*num_de_mortes])
-            #criando os botões de seleção temporal
-            #ajustando a posição da legenda, dando título à figura e ajustando suas dimensões
-            fig.update_layout(
-                plot_bgcolor="#F9F9F9",
-                paper_bgcolor="#F9F9F9",
-                legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
-                title ={
-                    'text': f"Número de Óbitos em {cidade}-{uf} ({data_atual})",
-                    'y':0.96, 'x': 0.96, 'xanchor':'right', 'yanchor':'top'
-                },
-                margin=dict(l=30, r=30, t=40, b=20)
-            )
+
+            ##ajustando a posição da legenda, dando título à figura e ajustando suas dimensões
+            #caso a pessoa esteja selecionando o Brasil ou uma UF:
+            if cidade == "":
+                if estado == "Brasil":
+                    fig.update_layout(
+                        plot_bgcolor="#F9F9F9",
+                        paper_bgcolor="#F9F9F9",
+                        legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
+                        title ={
+                            'text': f"Número de Óbitos no {estado} ({data_atual})",
+                            'y':0.96, 'x': 0.96, 'xanchor':'right', 'yanchor':'top'
+                        },
+                        margin=dict(l=30, r=30, t=40, b=20)
+                    )
+                else:
+                    uf = lista_estados[lista_estados_sigla.index(estado)]
+                    fig.update_layout(
+                        plot_bgcolor="#F9F9F9",
+                        paper_bgcolor="#F9F9F9",
+                        legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
+                        title ={
+                            'text': f"Número de Óbitos em {uf} ({data_atual})",
+                            'y':0.96, 'x': 0.96, 'xanchor':'right', 'yanchor':'top'
+                        },
+                        margin=dict(l=30, r=30, t=40, b=20)
+                    )
+            #no caso de um munícipio ter sido selecionado
+            else:
+                fig.update_layout(
+                    plot_bgcolor="#F9F9F9",
+                    paper_bgcolor="#F9F9F9",
+                    legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
+                    title ={
+                        'text': f"Número de Óbitos em {cidade}-{uf} ({data_atual})",
+                        'y':0.96, 'x': 0.96, 'xanchor':'right', 'yanchor':'top'
+                    },
+                    margin=dict(l=30, r=30, t=40, b=20)
+                )
 
         #ajustando a range do eixo x e criando + formatando os botões de seleção temporal
         fig.update_xaxes(
@@ -373,12 +504,14 @@ def Atualizar(n_clicks,cidade,estado,opcao):
             )
         )
         
-        #calculando os indicadores
-        novos_casos = f"{int(df_cidade['Casos'].tail(1)) - int(df_cidade['Casos'].tail(2).head(1))}"
-        incidencia = f"{round(num_de_casos*100000/int(df_cidade['populacao'].tail(1)),2)}"
-        novos_obitos = f"{int(df_cidade['Óbitos'].tail(1)) - int(df_cidade['Óbitos'].tail(2).head(1))}"
-        mortalidade = f"{round(num_de_mortes*100000/int(df_cidade['populacao'].tail(1)),2)}"
-        letalidade = f"{round(num_de_mortes/num_de_casos*100,2)}%"
+        #calculando os indicadores e formatando as numerações usando o módulo locale
+        novos_casos = f"{int(df_cidade['Casos'].tail(1)) - int(df_cidade['Casos'].tail(2).head(1)):n}"
+        incidencia = f"{np.around(num_de_casos*100000/int(df_cidade['populacao'].tail(1)),2):n}"
+        novos_obitos = f"{int(df_cidade['Óbitos'].tail(1)) - int(df_cidade['Óbitos'].tail(2).head(1)):n}"
+        mortalidade = f"{np.around(num_de_mortes*100000/int(df_cidade['populacao'].tail(1)),2):n}"
+        letalidade = f"{np.around(num_de_mortes/num_de_casos*100,2):n}%"
+        num_de_casos = f"{num_de_casos:n}"
+        num_de_mortes = f"{num_de_mortes:n}"
 
         return fig, erro, novos_casos, num_de_casos, incidencia, novos_obitos, num_de_mortes, mortalidade, letalidade
 

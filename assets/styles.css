@@ -34,15 +34,6 @@ body {
   padding: 0 0 0 0;
 }
 
-.dcc_control {
-  margin: 0;
-  padding: 5px;
-  text-align: center;
-  justify-content: center;
-  align-items: center;
-  width: calc(50%);
-}
-
 .control_label {
   margin: 0;
   padding: 10px;
@@ -59,10 +50,9 @@ body {
   display: flex;
 }
 
-#individual_graph,
-#aggregate_graph {
-  width: calc(100% - 30px);
-  position: absolute;
+#mainGraphContainer {
+  flex: 5;
+  position: relative;
 }
 
 #header {
@@ -75,6 +65,7 @@ body {
 
 #cidade_input{
   text-align: center;
+  width: calc(100%);
 }
 
 .mini_container {
