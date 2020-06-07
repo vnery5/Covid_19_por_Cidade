@@ -53,6 +53,7 @@ app.layout = html.Div(
                         html.A(
                             html.Button("Sobre o Autor"), #botão superior esquerdo
                             href="https://www.linkedin.com/in/viniciusdealmeidaneryferreira/",
+                             target='_blank', #abrir em uma nova aba
                         )
                     ],
                     className="one-third column",
@@ -80,6 +81,7 @@ app.layout = html.Div(
                         html.A(
                             html.Button("Ir para o GitHub do Projeto"), #botão superior direito
                             href="https://github.com/vnery5/Covid_19_por_Cidade",
+                             target='_blank',
                         )
                     ],
                     className="one-third column",
@@ -149,8 +151,8 @@ app.layout = html.Div(
                                     visualizar os dados totais da UF selecionada no 2º campo."""
                                 ),
                                 html.P(
-                                    """Criado com Python usando os dados mais recentes do Ministério da Saúde. 
-                                    Atualizado em 06/06/2020."""
+                                    """Criado com Python usando os dados mais recentes do Ministério da Saúde/G1. 
+                                    Atualização: 07/06/2020."""
                                 ),
                             ],
                         ),
