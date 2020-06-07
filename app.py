@@ -51,7 +51,7 @@ app.layout = html.Div(
                 html.Div(
                     [
                         html.A(
-                            html.Button("Sobre o Autor", id="author-button"), #botão superior esquerdo
+                            html.Button("Sobre o Autor"), #botão superior esquerdo
                             href="https://www.linkedin.com/in/viniciusdealmeidaneryferreira/",
                         )
                     ],
@@ -78,8 +78,8 @@ app.layout = html.Div(
                 html.Div(
                     [
                         html.A(
-                            html.Button("Mais dados sobre a Covid-19", id="minsaude-button"), #botão superior direito
-                            href="https://covid.saude.gov.br",
+                            html.Button("Ir para o GitHub do Projeto"), #botão superior direito
+                            href="https://github.com/vnery5/Covid_19_por_Cidade",
                         )
                     ],
                     className="one-third column",
