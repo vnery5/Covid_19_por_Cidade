@@ -7,7 +7,7 @@ import numpy as np
 import string
 import locale
 #formatando os numeros
-locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
+locale.setlocale(locale.LC_ALL, '')
 
 import dash
 import dash_core_components as dcc
