@@ -9,7 +9,7 @@ A grande inspiração para o design foi [este projeto](https://dash-gallery.plot
 
 ## Acesso online
 
-O painel pode ser visualizado [nesta URL](covid-19-por-municipio.herokuapp.com)
+O painel pode ser visualizado [nesta URL](dadoscovid19.herokuapp.com)
 
 ### Rodando o dashboard localmente
 
