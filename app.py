@@ -53,6 +53,7 @@ app.layout = html.Div(
                         html.A(
                             html.Button("Sobre o Autor"), #botão superior esquerdo
                             href="https://www.linkedin.com/in/viniciusdealmeidaneryferreira/",
+                            target='_blank', #abrir em uma nova aba,
                         )
                     ],
                     className="one-third column",
@@ -80,6 +81,7 @@ app.layout = html.Div(
                         html.A(
                             html.Button("Ir para o GitHub do Projeto"), #botão superior direito
                             href="https://github.com/vnery5/Covid_19_por_Cidade/",
+                            target='_blank', #abrir em uma nova aba,
                         )
                     ],
                     className="one-third column",
@@ -150,7 +152,7 @@ app.layout = html.Div(
                                 ),
                                 html.P(
                                     """Criado com Python usando os dados mais recentes do Ministério da Saúde. 
-                                    Atualizado em 06/06/2020."""
+                                    Atualizado em 07/06/2020."""
                                 ),
                             ],
                         ),
