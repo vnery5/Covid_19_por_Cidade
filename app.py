@@ -152,7 +152,7 @@ app.layout = html.Div(
                                 ),
                                 html.P(
                                     """Criado com Python usando os dados mais recentes do Brasil.IO/G1. 
-                                    Atualizado em 08/06/2020."""
+                                    Atualizado em 07/06/2020."""
                                 ),
                             ],
                         ),
