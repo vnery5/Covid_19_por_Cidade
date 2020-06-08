@@ -7,7 +7,7 @@ import numpy as np
 import string
 import locale
 #formatando os numeros
-locale.setlocale(locale.LC_ALL, '')
+locale.setlocale(locale.LC_ALL, 'pt_BR')
 
 import dash
 import dash_core_components as dcc
@@ -508,9 +508,9 @@ def Atualizar(n_clicks,cidade,estado,opcao):
         
         #calculando os indicadores e formatando as numerações usando o módulo locale
         novos_casos = f"{int(df_cidade['Casos'].tail(1)) - int(df_cidade['Casos'].tail(2).head(1)):n}"
-        incidencia = f"{np.around(num_de_casos*100000/int(df_cidade['populacao'].tail(1)),2):n}"
+        incidencia = f"{np.around(num_de_casos*100000/int(df_cidade['populacao'].head(1)),2):n}"
         novos_obitos = f"{int(df_cidade['Óbitos'].tail(1)) - int(df_cidade['Óbitos'].tail(2).head(1)):n}"
-        mortalidade = f"{np.around(num_de_mortes*100000/int(df_cidade['populacao'].tail(1)),2):n}"
+        mortalidade = f"{np.around(num_de_mortes*100000/int(df_cidade['populacao'].head(1)),2):n}"
         letalidade = f"{np.around(num_de_mortes/num_de_casos*100,2):n}%"
         num_de_casos = f"{num_de_casos:n}"
         num_de_mortes = f"{num_de_mortes:n}"
