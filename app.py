@@ -19,12 +19,14 @@ df = pd.read_csv("https://raw.githubusercontent.com/vnery5/Covid_19_por_Cidade/m
 
 ##limpando a base de dados
 #renomeando as colunas
-df.rename({'populacaoTCU2019':'populacao','casosAcumulado':'Casos','obitosAcumulado':'Óbitos','data':'Data'}, axis = 1, inplace = True)
+df.rename({'populacaoTCU2019':'populacao','casosAcumulado':'Casos','obitosAcumulado;;':'Óbitos','data':'Data'}, axis = 1, inplace = True)
 #transformando a coluna de data para o tipo apropriado
 df['Data'] = pd.to_datetime(df['Data'])
+#arrumando a coluna de óbitos
+df['Óbitos'] = df.Óbitos.str[:-2]
+df['Óbitos'] = df['Óbitos'].astype('int')
+#limpando as linhas sem indicação de população
 df.dropna(subset = ['populacao'], axis = 0, inplace = True)
-
-
 
 #definindo uma lista de todos os estados e suas siglas pra ser usado no dropwdown
 lista_estados_sigla = [
@@ -79,7 +81,7 @@ app.layout = html.Div(
                 html.Div(
                     [
                         html.A(
-                            html.Button("Ir para o site do Brasil.IO"), #botão superior direito
+                            html.Button("Mais dados sobre a Covid-19 (Brasil.IO)"), #botão superior direito
                             href="https://brasil.io/covid19/",
                             target='_blank',
                         )
@@ -151,8 +153,8 @@ app.layout = html.Div(
                                     visualizar os dados totais da UF selecionada no 2º campo."""
                                 ),
                                 html.P(
-                                    """Criado com Python usando os dados mais recentes do Brasil.IO/G1. 
-                                    Atualizado em 07/06/2020."""
+                                    """Criado com Python usando os dados mais recentes do Ministério da Saúde. 
+                                    Atualizado em 09/06/2020."""
                                 ),
                             ],
                         ),
