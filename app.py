@@ -1,6 +1,10 @@
-#importando os módulos necessários
+##importando os módulos necessários
 import plotly
 import plotly.graph_objs as go
+import dash
+import dash_core_components as dcc
+import dash_html_components as html
+from dash.dependencies import Input, Output, State
 
 import pandas as pd 
 import numpy as np
@@ -8,11 +12,8 @@ import string
 import locale
 #formatando os numeros
 locale.setlocale(locale.LC_ALL, '')
-
-import dash
-import dash_core_components as dcc
-import dash_html_components as html
-from dash.dependencies import Input, Output, State
+#importando datetime para verificar qual o dia de hoje
+from datetime import date
         
 #coletando a base de dados mais recente:
 df = pd.read_csv("https://raw.githubusercontent.com/vnery5/Covid_19_por_Cidade/master/Dados/dataset_covid_19.csv")
@@ -153,8 +154,8 @@ app.layout = html.Div(
                                     visualizar os dados totais da UF selecionada no 2º campo."""
                                 ),
                                 html.P(
-                                    """Criado com Python usando os dados mais recentes do Ministério da Saúde. 
-                                    Atualizado em 10/06/2020."""
+                                    f"""Criado com Python usando os dados mais recentes do Ministério da Saúde. 
+                                    Atualizado em {date.today().strftime("%d/%m/%Y")} ."""
                                 ),
                             ],
                         ),
