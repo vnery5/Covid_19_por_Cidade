@@ -1,6 +1,10 @@
-#importando os módulos necessários
+##importando os módulos necessários
 import plotly
 import plotly.graph_objs as go
+import dash
+import dash_core_components as dcc
+import dash_html_components as html
+from dash.dependencies import Input, Output, State
 
 import pandas as pd 
 import numpy as np
@@ -8,23 +12,20 @@ import string
 import locale
 #formatando os numeros
 locale.setlocale(locale.LC_ALL, '')
-
-import dash
-import dash_core_components as dcc
-import dash_html_components as html
-from dash.dependencies import Input, Output, State
+#importando datetime para verificar qual o dia de hoje
+from datetime import date
         
 #coletando a base de dados mais recente:
 df = pd.read_csv("https://raw.githubusercontent.com/vnery5/Covid_19_por_Cidade/master/Dados/dataset_covid_19.csv")
 
 ##limpando a base de dados
 #renomeando as colunas
-df.rename({'populacaoTCU2019':'populacao','casosAcumulado':'Casos','obitosAcumulado;;':'Óbitos','data':'Data'}, axis = 1, inplace = True)
+df.rename({'populacaoTCU2019':'populacao','casosAcumulado':'Casos','obitosAcumulado':'Óbitos','data':'Data'}, axis = 1, inplace = True)
 #transformando a coluna de data para o tipo apropriado
 df['Data'] = pd.to_datetime(df['Data'])
 #arrumando a coluna de óbitos
-df['Óbitos'] = df.Óbitos.str[:-2]
-df['Óbitos'] = df['Óbitos'].astype('int')
+#df['Óbitos'] = df.Óbitos.str[:-2]
+#df['Óbitos'] = df['Óbitos'].astype('int')
 #limpando as linhas sem indicação de população
 df.dropna(subset = ['populacao'], axis = 0, inplace = True)
 
@@ -153,8 +154,8 @@ app.layout = html.Div(
                                     visualizar os dados totais da UF selecionada no 2º campo."""
                                 ),
                                 html.P(
-                                    """Criado com Python usando os dados mais recentes do Ministério da Saúde. 
-                                    Atualizado em 07/06/2020."""
+                                    f"""Criado com Python usando os dados mais recentes do Ministério da Saúde. 
+                                    Atualizado em {date.today().strftime("%d/%m/%Y")}.
                                 ),
                             ],
                         ),
@@ -510,12 +511,25 @@ def Atualizar(n_clicks,cidade,estado,opcao):
         
         #calculando os indicadores e formatando as numerações usando o módulo locale
         novos_casos = f"{int(df_cidade['Casos'].tail(1)) - int(df_cidade['Casos'].tail(2).head(1)):n}"
-        incidencia = f"{np.around(num_de_casos*100000/int(df_cidade['populacao'].tail(1)),2):n}"
+        novos_casos.replace(",",".")
+
         novos_obitos = f"{int(df_cidade['Óbitos'].tail(1)) - int(df_cidade['Óbitos'].tail(2).head(1)):n}"
-        mortalidade = f"{np.around(num_de_mortes*100000/int(df_cidade['populacao'].tail(1)),2):n}"
+        novos_obitos.replace(",",".")
+
+        incidencia = f"{np.around(num_de_casos*100000/int(df_cidade['populacao'].head(1)),2):n}"
+        incidencia.replace(".",",")
+
+        mortalidade = f"{np.around(num_de_mortes*100000/int(df_cidade['populacao'].head(1)),2):n}"
+        mortalidade.replace(".",",")
+
         letalidade = f"{np.around(num_de_mortes/num_de_casos*100,2):n}%"
+        letalidade.replace(".",",")
+
         num_de_casos = f"{num_de_casos:n}"
+        num_de_casos.replace(",",".")
+
         num_de_mortes = f"{num_de_mortes:n}"
+        num_de_mortes.replace(",",".")
 
         return fig, erro, novos_casos, num_de_casos, incidencia, novos_obitos, num_de_mortes, mortalidade, letalidade
 
