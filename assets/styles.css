@@ -104,6 +104,18 @@ body {
   flex: 1;
 }
 
+#grafico_obitos,
+#grafico_casos {
+  width: calc(100% - 30px);
+  position: absolute;
+}
+
+#mainGraph {
+  position: absolute;
+  height: calc(100% - 30px);
+  width: calc(100% - 30px);
+}
+
 #mainContainer {
   display: flex;
   flex-direction: column;
