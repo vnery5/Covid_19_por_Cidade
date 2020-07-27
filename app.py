@@ -24,63 +24,14 @@ df = pd.read_csv("https://raw.githubusercontent.com/vnery5/Covid_19_por_Cidade/m
 
 ##limpando a base de dados
 #renomeando as colunas
-df.rename({'populacaoTCU2019':'populacao','casosAcumulado':'Casos','casosNovos':'Novos Casos',
-'obitosAcumulado':'Óbitos','obitosNovos':'Novos Óbitos','data':'Data','estado':'Estado'}, axis = 1, inplace = True)
+df.rename({'populacaoTCU2019':'populacao','casosAcumulado':'Casos','casosNovos':'Novos_Casos',
+'obitosAcumulado':'Óbitos','obitosNovos':'Novos_Óbitos','data':'Data','estado':'Estado'}, axis = 1, inplace = True)
 
 #transformando a coluna de data para o tipo apropriado
 df['Data'] = pd.to_datetime(df['Data'])
 #limpando as linhas sem indicação de população
 df.dropna(subset = ['populacao'], axis = 0, inplace = True)
 
-#criando o dataset que servira de base para os mapas
-df_estados =df.loc[df['Data'] == df['Data'].max()]
-df_estados = df_estados.head(28)
-#excluindo a linha do Brasil
-df_estados = df_estados.tail(27)
-
-#importando as coordenadas
-with urlopen('https://raw.githubusercontent.com/luizpedone/municipal-brazilian-geodata/master/data/Brasil.json') as response:
-    estados_geojson = json.load(response)
-
-#criando os mapas
-fig_casos = px.choropleth(
-    df_estados, geojson=estados_geojson, locations='Estado',
-    color='Casos',
-    color_continuous_scale="Reds",
-    featureidkey="properties.UF",
-    scope="south america",
-    )
-fig_casos.update_geos(fitbounds="locations", visible=False)
-fig_casos.update_layout(
-                    plot_bgcolor="#F9F9F9",
-                    paper_bgcolor="#F9F9F9",
-                    geo=dict(bgcolor= 'rgba(0,0,0,0)'),
-                    legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
-                    title ={
-                        'text': f"Número de Casos por Estado",
-                        'y':0.96, 'x': 0.04, 'xanchor':'left', 'yanchor':'top'
-                    },
-                    margin=dict(l=30, r=30, t=40, b=20)
-                )
-fig_obitos = px.choropleth(
-    df_estados, geojson=estados_geojson, locations='Estado',
-    color='Óbitos',
-    color_continuous_scale="Reds",
-    featureidkey="properties.UF",
-    scope="south america",
-    )
-fig_obitos.update_geos(fitbounds="locations", visible=False)
-fig_obitos.update_layout(
-                    plot_bgcolor="#F9F9F9",
-                    paper_bgcolor="#F9F9F9",
-                    geo=dict(bgcolor= 'rgba(0,0,0,0)'),
-                    legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
-                    title ={
-                        'text': f"Número de Óbitos por Estado",
-                        'y':0.96, 'x': 0.04, 'xanchor':'left', 'yanchor':'top'
-                    },
-                    margin=dict(l=30, r=30, t=40, b=20)
-                )
 #definindo uma lista de todos os estados e suas siglas pra ser usado no dropwdown
 lista_estados_sigla = [
     'Brasil',
@@ -94,11 +45,64 @@ lista_estados = [
     'Rondônia','Roraima','Rio Grande do Sul','Santa Catarina','Sergipe','São Paulo','Tocantins'
 ]
 
-'''
-##criando os mapas de calor (não mudam)
-fig_casos
-fig_obitos
-'''
+#criando o dataset que servira de base para os mapas
+df_estados =df.loc[df['Data'] == df['Data'].max()]
+df_estados = df_estados.head(28)
+#excluindo a linha do Brasil
+df_estados = df_estados.tail(27)
+
+#criando o texto que vai ser exibido ao passar o mouse por cima do estado
+for col in df_estados.columns:
+    df_estados[col] = df_estados[col].astype(str)
+
+df_estados['texto_casos'] = df['Estado'] + '<br>' + \
+    'Casos Totais: ' + df['Casos'] + '<br>' + 'Novos Casos: ' + df['Novos_Casos']
+df_estados['texto_obitos'] = df['Estado'] + '<br>' + \
+    'Óbitos Totais: ' + df['Óbitos'] + '<br>' + ' Novos Óbitos:' + df['Novos_Óbitos']
+
+#importando as coordenadas
+with urlopen('https://raw.githubusercontent.com/luizpedone/municipal-brazilian-geodata/master/data/Brasil.json') as response:
+    estados_geojson = json.load(response)
+
+#criando os mapas
+fig_casos = px.choropleth(
+    df_estados, geojson=estados_geojson, locations='Estado',
+    color='Casos',
+    color_continuous_scale="Reds",
+    featureidkey="properties.UF",
+    scope="south america",
+    text=df['texto_casos']
+    )
+fig_casos.update_geos(fitbounds="locations", visible=False)
+fig_casos.update_layout(
+                    plot_bgcolor="#F9F9F9",
+                    paper_bgcolor="#F9F9F9",
+                    geo=dict(bgcolor= 'rgba(0,0,0,0)'),
+                    title ={
+                        'text': f"Número de Casos por Estado",
+                        'y':0.96, 'x': 0.04, 'xanchor':'left', 'yanchor':'top'
+                    },
+                    margin=dict(l=30, r=30, t=40, b=20)
+                )
+fig_obitos = px.choropleth(
+    df_estados, geojson=estados_geojson, locations='Estado',
+    color='Óbitos',
+    color_continuous_scale="Reds",
+    featureidkey="properties.UF",
+    scope="south america",
+    text=df['texto_obitos']
+    )
+fig_obitos.update_geos(fitbounds="locations", visible=False)
+fig_obitos.update_layout(
+                    plot_bgcolor="#F9F9F9",
+                    paper_bgcolor="#F9F9F9",
+                    geo=dict(bgcolor= 'rgba(0,0,0,0)'),
+                    title ={
+                        'text': f"Número de Óbitos por Estado",
+                        'y':0.96, 'x': 0.04, 'xanchor':'left', 'yanchor':'top'
+                    },
+                    margin=dict(l=30, r=30, t=40, b=20)
+                )
 
 #fazendo o dashboard e criando o servidor do Flask
 app = dash.Dash(__name__, meta_tags=[{"name": "viewport", "content": "width=device-width"}])
@@ -588,26 +592,22 @@ def Atualizar_Grafico_Principal(n_clicks,cidade,estado,opcao):
         )
         
         #calculando os indicadores e formatando as numerações usando o módulo locale
-        novos_casos = f"{int(df_cidade['Casos'].tail(1)) - int(df_cidade['Casos'].tail(2).head(1)):n}"
-        novos_casos = novos_casos.replace(",",".")
+        novos_casos = f"{int(df_cidade['Novos_Casos'].tail(1)):.}"
 
-        novos_obitos = f"{int(df_cidade['Óbitos'].tail(1)) - int(df_cidade['Óbitos'].tail(2).head(1)):n}"
-        novos_obitos = novos_obitos.replace(",",".")
+        novos_obitos = f"{int(df_cidade['Novos_Óbitos'].tail(1)):.}"
 
-        incidencia = f"{np.around(num_de_casos*100000/int(df_cidade['populacao'].head(1)),2):n}"
-        incidencia = incidencia.replace(".",",")
+        incidencia = f"{np.around(num_de_casos*100000/int(df_cidade['populacao'].head(1)),2):.}"
+        #incidencia = incidencia.replace(".",",")
 
-        mortalidade = f"{np.around(num_de_mortes*100000/int(df_cidade['populacao'].head(1)),2):n}"
-        mortalidade = mortalidade.replace(".",",")
+        mortalidade = f"{np.around(num_de_mortes*100000/int(df_cidade['populacao'].head(1)),2):.}"
+        #mortalidade = mortalidade.replace(".",",")
 
-        letalidade = f"{np.around(num_de_mortes/num_de_casos*100,2):n}%"
-        letalidade = letalidade.replace(".",",")
+        letalidade = f"{np.around(num_de_mortes/num_de_casos*100,2):.}%"
+        #letalidade = letalidade.replace(".",",")
 
-        num_de_casos = f"{num_de_casos:n}"
-        num_de_casos = num_de_casos.replace(",",".")
+        num_de_casos = f"{num_de_casos:.}"
 
-        num_de_mortes = f"{num_de_mortes:n}"
-        num_de_mortes = num_de_mortes.replace(",",".")
+        num_de_mortes = f"{num_de_mortes:.}"
 
         return fig, erro, novos_casos, num_de_casos, incidencia, novos_obitos, num_de_mortes, mortalidade, letalidade
 
