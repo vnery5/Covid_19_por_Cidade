@@ -24,12 +24,11 @@ df = pd.read_csv("https://raw.githubusercontent.com/vnery5/Covid_19_por_Cidade/m
 
 ##limpando a base de dados
 #renomeando as colunas
-df.rename({'populacaoTCU2019':'populacao','casosAcumulado':'Casos','obitosAcumulado':'Óbitos','data':'Data','estado':'Estado'}, axis = 1, inplace = True)
+df.rename({'populacaoTCU2019':'populacao','casosAcumulado':'Casos','casosNovos':'Novos Casos',
+'obitosAcumulado':'Óbitos','obitosNovos':'Novos Óbitos','data':'Data','estado':'Estado'}, axis = 1, inplace = True)
+
 #transformando a coluna de data para o tipo apropriado
 df['Data'] = pd.to_datetime(df['Data'])
-#arrumando a coluna de óbitos
-#df['Óbitos'] = df.Óbitos.str[:-2]
-#df['Óbitos'] = df['Óbitos'].astype('int')
 #limpando as linhas sem indicação de população
 df.dropna(subset = ['populacao'], axis = 0, inplace = True)
 
@@ -39,10 +38,11 @@ df_estados = df_estados.head(28)
 #excluindo a linha do Brasil
 df_estados = df_estados.tail(27)
 
-#importandoas coordenadas
+#importando as coordenadas
 with urlopen('https://raw.githubusercontent.com/luizpedone/municipal-brazilian-geodata/master/data/Brasil.json') as response:
     estados_geojson = json.load(response)
 
+#criando os mapas
 fig_casos = px.choropleth(
     df_estados, geojson=estados_geojson, locations='Estado',
     color='Casos',
