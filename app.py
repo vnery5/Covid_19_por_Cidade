@@ -472,6 +472,44 @@ def Atualizar_Grafico_Principal(n_clicks,cidade,estado,opcao):
                     margin=dict(l=30, r=30, t=40, b=20)
                 )
 
+            ##ajustando a posição da legenda, dando título à figura e ajustando suas dimensões
+            #caso a pessoa selecione uma UF ou o Brasil:
+            if cidade == "":
+                if estado == "Brasil":
+                    fig.update_layout(
+                        plot_bgcolor="#F9F9F9",
+                        paper_bgcolor="#F9F9F9",
+                        legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
+                        title ={
+                            'text': f"Número de Casos no {estado} ({data_atual})",
+                            'y':0.96, 'x': 0.96, 'xanchor':'right', 'yanchor':'top'
+                        },
+                        margin=dict(l=30, r=30, t=40, b=20)
+                    )
+                else:
+                    uf = lista_estados[lista_estados_sigla.index(estado)]
+                    fig.update_layout(
+                        plot_bgcolor="#F9F9F9",
+                        paper_bgcolor="#F9F9F9",
+                        legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
+                        title ={
+                            'text': f"Número de Casos em {uf} ({data_atual})",
+                            'y':0.96, 'x': 0.96, 'xanchor':'right', 'yanchor':'top'
+                        },
+                        margin=dict(l=30, r=30, t=40, b=20)
+                    )
+            #caso seja um munícipio
+            else:
+                fig.update_layout(
+                    plot_bgcolor="#F9F9F9",
+                    paper_bgcolor="#F9F9F9",
+                    legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
+                    title ={
+                        'text': f"Número de Casos em {cidade}-{uf} ({data_atual})",
+                        'y':0.96, 'x': 0.96, 'xanchor':'right', 'yanchor':'top'
+                    },
+                    margin=dict(l=30, r=30, t=40, b=20)
+                )
 
         else:
             #caso a pessoa selecione uma UF ou o Brasil:
