@@ -1,10 +1,14 @@
 ##importando os módulos necessários
 import plotly
 import plotly.graph_objs as go
+import plotly.express as px
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output, State, ClientsideFunction
+
+from urllib.request import urlopen
+import json
 
 import pandas as pd 
 import numpy as np
@@ -20,7 +24,7 @@ df = pd.read_csv("https://raw.githubusercontent.com/vnery5/Covid_19_por_Cidade/m
 
 ##limpando a base de dados
 #renomeando as colunas
-df.rename({'populacaoTCU2019':'populacao','casosAcumulado':'Casos','obitosAcumulado':'Óbitos','data':'Data'}, axis = 1, inplace = True)
+df.rename({'populacaoTCU2019':'populacao','casosAcumulado':'Casos','obitosAcumulado':'Óbitos','data':'Data','estado':'Estado'}, axis = 1, inplace = True)
 #transformando a coluna de data para o tipo apropriado
 df['Data'] = pd.to_datetime(df['Data'])
 #arrumando a coluna de óbitos
@@ -29,6 +33,54 @@ df['Data'] = pd.to_datetime(df['Data'])
 #limpando as linhas sem indicação de população
 df.dropna(subset = ['populacao'], axis = 0, inplace = True)
 
+#criando o dataset que servira de base para os mapas
+df_estados =df.loc[df['Data'] == df['Data'].max()]
+df_estados = df_estados.head(28)
+#excluindo a linha do Brasil
+df_estados = df_estados.tail(27)
+
+#importandoas coordenadas
+with urlopen('https://raw.githubusercontent.com/luizpedone/municipal-brazilian-geodata/master/data/Brasil.json') as response:
+    estados_geojson = json.load(response)
+
+fig_casos = px.choropleth(
+    df_estados, geojson=estados_geojson, locations='Estado',
+    color='Casos',
+    color_continuous_scale="Reds",
+    featureidkey="properties.UF",
+    scope="south america",
+    )
+fig_casos.update_geos(fitbounds="locations", visible=False)
+fig_casos.update_layout(
+                    plot_bgcolor="#F9F9F9",
+                    paper_bgcolor="#F9F9F9",
+                    geo=dict(bgcolor= 'rgba(0,0,0,0)'),
+                    legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
+                    title ={
+                        'text': f"Número de Casos por Estado",
+                        'y':0.96, 'x': 0.04, 'xanchor':'left', 'yanchor':'top'
+                    },
+                    margin=dict(l=30, r=30, t=40, b=20)
+                )
+fig_obitos = px.choropleth(
+    df_estados, geojson=estados_geojson, locations='Estado',
+    color='Óbitos',
+    color_continuous_scale="Reds",
+    featureidkey="properties.UF",
+    scope="south america",
+    )
+fig_obitos.update_geos(fitbounds="locations", visible=False)
+fig_obitos.update_layout(
+                    plot_bgcolor="#F9F9F9",
+                    paper_bgcolor="#F9F9F9",
+                    geo=dict(bgcolor= 'rgba(0,0,0,0)'),
+                    legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
+                    title ={
+                        'text': f"Número de Óbitos por Estado",
+                        'y':0.96, 'x': 0.04, 'xanchor':'left', 'yanchor':'top'
+                    },
+                    margin=dict(l=30, r=30, t=40, b=20)
+                )
 #definindo uma lista de todos os estados e suas siglas pra ser usado no dropwdown
 lista_estados_sigla = [
     'Brasil',
@@ -41,13 +93,20 @@ lista_estados = [
     'Mato Grosso do Sul','Mato Grosso','Pará','Paraíba','Pernambuco','Piauí','Paraná','Rio de Janeiro','Rio Grande do Norte',
     'Rondônia','Roraima','Rio Grande do Sul','Santa Catarina','Sergipe','São Paulo','Tocantins'
 ]
+
+'''
+##criando os mapas de calor (não mudam)
+fig_casos
+fig_obitos
+'''
+
 #fazendo o dashboard e criando o servidor do Flask
 app = dash.Dash(__name__, meta_tags=[{"name": "viewport", "content": "width=device-width"}])
 server = app.server
 
 ##criando o layout da página; para mais informações, veja o arquivo styles.css e s1.css
 app.layout = html.Div(
-    [
+    [dcc.Store(id="aggregate_data"),
         html.Div(id="output-clientside"),
         html.Div(
             [
@@ -206,8 +265,8 @@ app.layout = html.Div(
                             id="info-container",
                             className="row container-display",
                         ),
-                        html.Div(#divisão de baixo, com o gráfico
-                            [dcc.Graph(id="grafico")],
+                        html.Div(#divisão do lado, com o gráfico
+                            [dcc.Graph(id="mainGraph")],
                             id="mainGraphContainer",
                             className="pretty_container",
                         ),
@@ -218,15 +277,34 @@ app.layout = html.Div(
             ],
             className="row flex-display",
         ),
-        ],
+        html.Div(
+            [
+                html.Div(
+                    [dcc.Graph(id="grafico_casos", figure = fig_casos)],
+                    className="pretty_container six columns",
+                ),
+                html.Div(
+                    [dcc.Graph(id="grafico_obitos", figure = fig_obitos)],
+                    className="pretty_container six columns",
+                ),
+            ],
+            className="row flex-display",
+        ),
+    ],
     id="mainContainer",
     style={"display": "flex", "flex-direction": "column"},
 )
 
 ##criando as funções de atualização dos gráficos e das informações usando o decorador app.callback
+app.clientside_callback(
+    ClientsideFunction(namespace="clientside", function_name="resize"),
+    Output("output-clientside", "children"),
+    [Input("mainGraph", "figure")],
+)
+
 #usei o State pra só gerar o gráfico quando o usuário apertar o botão
 @app.callback(
-    [Output('grafico','figure'),
+    [Output('mainGraph','figure'),
     Output('se_der_erro','children'),
     Output('novos_casos_text','children'),
     Output('casos_totais_text','children'),
@@ -240,13 +318,13 @@ app.layout = html.Div(
     State('opcao_de_estados','value'),
     State('opcao_casos_ou_mortes','value')]
 )
-def Atualizar(n_clicks,cidade,estado,opcao):
+def Atualizar_Grafico_Principal(n_clicks,cidade,estado,opcao):
     #if para caso o Brasil ou um UF seja selecionada:
     if cidade == "":
         if estado == "Brasil":
             df_cidade = df.loc[df['regiao'] == estado]
         else:
-            df_cidade = df.loc[df['estado'] == estado]
+            df_cidade = df.loc[df['Estado'] == estado]
             df_cidade = df_cidade.loc[df_cidade['municipio'].isnull()]
     else:
         #coletando o nome da cidade e controlando para o nome ficar formatado da forma apropriada
@@ -256,7 +334,7 @@ def Atualizar(n_clicks,cidade,estado,opcao):
             cidade = str(cidade).capitalize()
         #gerando o dataframe com os casos e óbitos só daquela cidade
         df_cidade = df.loc[df['municipio'] == cidade]
-        df_cidade =df_cidade.loc[df_cidade['estado'] == estado]
+        df_cidade =df_cidade.loc[df_cidade['Estado'] == estado]
 
     #controle de erros
     if df_cidade.empty == True:
@@ -267,7 +345,7 @@ def Atualizar(n_clicks,cidade,estado,opcao):
     else:
         #se deu tudo certo, gerar o gráfico
         erro = ""
-        uf = str(df_cidade['estado'].values.tolist()[0])
+        uf = str(df_cidade['Estado'].values.tolist()[0])
 
         #capturando e formatando todas as datas desde que a cidade registrou o 1º caso
         datas = df_cidade['Data'].dt.strftime('%d/%m/%Y').values.tolist()
