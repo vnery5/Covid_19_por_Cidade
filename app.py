@@ -13,14 +13,18 @@ import json
 import pandas as pd 
 import numpy as np
 import string
-import locale
-#formatando os numeros
-locale.setlocale(locale.LC_ALL, '')
 #importando datetime para verificar qual o dia de hoje
 from datetime import date
         
 #coletando a base de dados mais recente:
-df = pd.read_csv("https://raw.githubusercontent.com/vnery5/Covid_19_por_Cidade/master/Dados/dataset_covid_19.csv")
+url_base_de_dados = "https://raw.githubusercontent.com/vnery5/Covid_19_por_Cidade/master/Dados/dataset_covid_19.csv"
+cabecalho = ['regiao','estado','municipio','data','populacaoTCU2019','casosAcumulado','casosNovos','obitosAcumulado','obitosNovos']
+dtypes = {
+    'regiao':'str','estado':'str', 'municipio':'str','data':'str','populacaoTCU2019':'str',
+    'casosAcumulado':'str','casosNovos':'str','obitosAcumulado':'str','obitosNovos':'str'
+}
+parse_dates = ['data']
+df = pd.read_csv(url_base_de_dados, dtype = dtypes)
 
 ##limpando a base de dados
 #renomeando as colunas
@@ -71,7 +75,7 @@ fig_casos = px.choropleth(
     color_continuous_scale="Reds",
     featureidkey="properties.UF",
     scope="south america",
-    text=df['texto_casos']
+    #text=df['texto_casos']
     )
 fig_casos.update_geos(fitbounds="locations", visible=False)
 fig_casos.update_layout(
@@ -90,7 +94,7 @@ fig_obitos = px.choropleth(
     color_continuous_scale="Reds",
     featureidkey="properties.UF",
     scope="south america",
-    text=df['texto_obitos']
+    #text=df['texto_obitos']
     )
 fig_obitos.update_geos(fitbounds="locations", visible=False)
 fig_obitos.update_layout(
