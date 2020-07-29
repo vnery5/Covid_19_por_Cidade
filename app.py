@@ -132,7 +132,7 @@ fig_obitos.update_layout(
     paper_bgcolor="#F9F9F9",
     geo=dict(bgcolor='rgba(0,0,0,0)'),
     title ={
-        'text': f'Evolução Óbitos por UF',
+        'text': f'Evolução de Óbitos por UF',
         'y':0.96, 'x': 0.04, 'xanchor':'left', 'yanchor':'top'
     },
     margin=dict(l=30, r=30, t=40, b=20)
