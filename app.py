@@ -33,14 +33,8 @@ with urlopen('https://raw.githubusercontent.com/luizpedone/municipal-brazilian-g
 df.rename({'populacaoTCU2019':'populacao','casosAcumulado':'Casos',
 'obitosAcumulado':'Óbitos','data':'Data','estado':'Estado'}, axis = 1, inplace = True)
 
-#limpando as linhas sem indicação de população
-df.dropna(subset = ['populacao'], axis = 0, inplace = True)
-
 #transformando a coluna de data para o tipo apropriado
 df['Data'] = pd.to_datetime(df['Data'])
-df['populacao'] = df['populacao'].astype('int')
-df['Casos'] = df['Casos'].astype('int')
-df['Óbitos'] = df['Óbitos'].astype('int')
 
 #criando as medias moveis
 df['mediamovelcasos'] = df['casosNovos'].rolling(7).mean()
