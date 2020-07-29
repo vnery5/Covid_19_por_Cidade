@@ -13,6 +13,6 @@ O painel pode ser visualizado [nesta URL](dadoscovid19.herokuapp.com)
 
 ## Prints
 
-![screenshot](Prints/FotoDashCovid1.png)
-![screenshot](Prints/FotoDashCovid2.png)
-![screenshot](Prints/FotoDashCovid3.png)
+![screenshot](Prints/FotoDashCovid1.jpeg)
+![screenshot](Prints/FotoDashCovid2.jpeg)
+![screenshot](Prints/FotoDashCovid3.jpeg)
