@@ -253,7 +253,7 @@ app.layout = html.Div(
                             style = {'align':'center','justifyContent':'center'}
                         ),
                         html.P(
-                            "Selecione a UF do município escolhido (com pelo menos 10 casos) ou a UF que deseja visualizar:",
+                            "Selecione a UF do município escolhido (com pelo menos dez casos) ou a UF que deseja visualizar:",
                             className = "control_label"
                         ),
                         dcc.Dropdown(  #seleção da UF/Brasil
