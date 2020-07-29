@@ -18,11 +18,15 @@ import math
 import locale
 locale.setlocale(locale.LC_ALL, '')
 #importando datetime para verificar qual o dia de hoje
-from datetime import date
+from datetime import date, timedelta
         
 #coletando a base de dados mais recente:
 url_base_de_dados = "https://raw.githubusercontent.com/vnery5/Covid_19_por_Cidade/master/Dados/dataset_covid_19.csv"
 df = pd.read_csv(url_base_de_dados)
+
+#importando as coordenadas dos estados
+with urlopen('https://raw.githubusercontent.com/luizpedone/municipal-brazilian-geodata/master/data/Brasil.json') as response:
+    estados_geojson = json.load(response)
 
 ##limpando a base de dados
 #renomeando as colunas
@@ -38,6 +42,10 @@ df['populacao'] = df['populacao'].astype('int')
 df['Casos'] = df['Casos'].astype('int')
 df['Óbitos'] = df['Óbitos'].astype('int')
 
+#criando as medias moveis
+df['mediamovelcasos'] = df['casosNovos'].rolling(7).mean()
+df['mediamovelobitos'] = df['obitosNovos'].rolling(7).mean()
+
 #definindo uma lista de todos os estados e suas siglas pra ser usado no dropwdown
 lista_estados_sigla = [
     'Brasil',
@@ -51,60 +59,135 @@ lista_estados = [
     'Rondônia','Roraima','Rio Grande do Sul','Santa Catarina','Sergipe','São Paulo','Tocantins'
 ]
 
-#criando o dataset que servira de base para os mapas
-df_estados =df.loc[df['Data'] == df['Data'].max()]
-df_estados = df_estados.head(28)
+##criando o dataset que servira de base para os mapas
+df_estados = df.loc[(df['Data'] == df['Data'].max() - pd.DateOffset(14)) | (df['Data'] == df['Data'].max())]
+#pegando apenas os estados
+df_estados = df_estados.head(56)
 #excluindo a linha do Brasil
-df_estados = df_estados.tail(27)
+df_estados = df_estados.tail(54)
 
-df_estados['Incidencia'] = round(df_estados['Casos']*100000/df_estados['populacao'],2)
-df_estados['Mortalidade'] = round(df_estados['Óbitos']*100000/df_estados['populacao'],2)
+#calculando a variacao das medias moveis de duas semanas
+df_estados['mediamovelcasos1'] = df_estados['mediamovelcasos'].shift(1)
+df_estados['mediamovelobitos1'] = df_estados['mediamovelobitos'].shift(1)
+df_estados['Variação dos casos frente a média móvel de duas semanas atrás'] = round((df_estados['mediamovelcasos']/df_estados['mediamovelcasos1'] - 1)*100,2)
+df_estados['Variação dos óbitos frente a média móvel de duas semanas atrás']= round((df_estados['mediamovelobitos']/df_estados['mediamovelobitos1'] - 1)*100,2)
 
-#importando as coordenadas
-with urlopen('https://raw.githubusercontent.com/luizpedone/municipal-brazilian-geodata/master/data/Brasil.json') as response:
-    estados_geojson = json.load(response)
+#pegando apenas os últimos valores
+df_estados =df_estados.loc[df_estados['Data'] == df_estados['Data'].max()]
 
-#criando os mapas
+#determinando qual a situação de uma UF
+def Status_Casos(row):
+    if row['Variação dos casos frente a média móvel de duas semanas atrás'] > 15:
+        val = "Crescente"
+    elif row['Variação dos casos frente a média móvel de duas semanas atrás'] < -15:
+        val = "Decrescente"
+    else:
+        val = "Estável"
+    return val
+
+def Status_Obitos(row):
+    if row['Variação dos óbitos frente a média móvel de duas semanas atrás'] > 15:
+        val = "Crescente"
+    elif row['Variação dos óbitos frente a média móvel de duas semanas atrás'] < -15:
+        val = "Decrescente"
+    else:
+        val = "Estável"
+    return val
+
+df_estados['Situação (Casos)'] = df_estados.apply(Status_Casos, axis=1)
+df_estados['Situação (Óbitos)'] = df_estados.apply(Status_Obitos, axis=1)
+
+#formatando as colunas de variação
+df_estados['Variação dos casos frente a média móvel de duas semanas atrás'] = df_estados['Variação dos casos frente a média móvel de duas semanas atrás'].astype(str) + "%"
+df_estados['Variação dos óbitos frente a média móvel de duas semanas atrás'] = df_estados['Variação dos óbitos frente a média móvel de duas semanas atrás'].astype(str) + "%"
+
+#criando os mapas de status
 fig_casos = px.choropleth(
     df_estados, geojson=estados_geojson, locations='Estado',
-    color='Incidencia',
-    color_continuous_scale="Reds",
+    color = 'Situação (Casos)',
+    color_discrete_sequence=["rgb(0,0,143)", "rgb(0,0,255)", "rgb(180,230,255)"],
+    category_orders = {"Situação (Casos)":['Crescente','Estável','Decrescente']},
+    featureidkey="properties.UF",
+    scope="south america",
+    hover_data = ['Variação dos casos frente a média móvel de duas semanas atrás']
+)
+fig_casos.update_geos(fitbounds="locations", visible=False)
+fig_casos.update_layout(
+    plot_bgcolor="#F9F9F9",
+    paper_bgcolor="#F9F9F9",
+    geo=dict(bgcolor='rgba(0,0,0,0)'),
+    title ={
+        'text': f'Situação da Média Móvel de Casos por UF',
+        'y':0.96, 'x': 0.04, 'xanchor':'left', 'yanchor':'top'
+    },
+    margin=dict(l=30, r=30, t=40, b=20)
+)
+
+fig_obitos = px.choropleth(
+    df_estados, geojson=estados_geojson, locations='Estado',
+    color = 'Situação (Óbitos)',
+    color_discrete_sequence=["rgb(143,0,0)", "rgb(255,0,0)", "rgb(255,230,230)"],
+    category_orders = {"Situação (Óbitos)":['Crescente','Estável','Decrescente']},
+    featureidkey="properties.UF",
+    scope="south america",
+    hover_data = ['Variação dos óbitos frente a média móvel de duas semanas atrás'] 
+)
+fig_obitos.update_geos(fitbounds="locations", visible=False)
+fig_obitos.update_layout(
+    plot_bgcolor="#F9F9F9",
+    paper_bgcolor="#F9F9F9",
+    geo=dict(bgcolor='rgba(0,0,0,0)'),
+    title ={
+        'text': f'Situação da Média Móvel de Óbitos por UF',
+        'y':0.96, 'x': 0.04, 'xanchor':'left', 'yanchor':'top'
+    },
+    margin=dict(l=30, r=30, t=40, b=20)
+)
+#calculando as incidências e mortalidades
+df_estados['Incidência'] = round(df_estados['Casos']*100000/df_estados['populacao'],2)
+df_estados['Mortalidade'] = round(df_estados['Óbitos']*100000/df_estados['populacao'],2)
+
+#criando os mapas de incidencia e mortalidade
+fig_incidencia = px.choropleth(
+    df_estados, geojson=estados_geojson, locations='Estado',
+    color='Incidência',
+    color_continuous_scale="Blues",
     featureidkey="properties.UF",
     scope="south america",
     hover_data=["Casos"]
-    )
-fig_casos.update_geos(fitbounds="locations", visible=False)
-fig_casos.update_layout(
-                    plot_bgcolor="#F9F9F9",
-                    paper_bgcolor="#F9F9F9",
-                    geo=dict(bgcolor='rgba(0,0,0,0)'),
-                    legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
-                    title ={
-                        'text': f"Incidência por Estado",
-                        'y':0.96, 'x': 0.04, 'xanchor':'left', 'yanchor':'top'
-                    },
-                    margin=dict(l=30, r=30, t=40, b=20)
-                )
-fig_obitos = px.choropleth(
+)
+fig_incidencia.update_geos(fitbounds="locations", visible=False)
+fig_incidencia.update_layout(
+    plot_bgcolor="#F9F9F9",
+    paper_bgcolor="#F9F9F9",
+    geo=dict(bgcolor='rgba(0,0,0,0)'),
+    legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
+    title ={
+        'text': f'Incidência por Estado<br><span style="font-size: 12px;">(Número de Casos por 100.000 Habitantes)</span>',
+        'y':0.96, 'x': 0.04, 'xanchor':'left', 'yanchor':'top'
+    },
+    margin=dict(l=30, r=30, t=40, b=20)
+)
+fig_mortalidade = px.choropleth(
     df_estados, geojson=estados_geojson, locations='Estado',
     color='Mortalidade',
     color_continuous_scale="Reds",
     featureidkey="properties.UF",
     scope="south america",
     hover_data=["Óbitos"]
-    )
-fig_obitos.update_geos(fitbounds="locations", visible=False)
-fig_obitos.update_layout(
-                    plot_bgcolor="#F9F9F9",
-                    paper_bgcolor="#F9F9F9",
-                    legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
-                    geo=dict(bgcolor= 'rgba(0,0,0,0)'),
-                    title ={
-                        'text': f"Mortalidade por Estado",
-                        'y':0.96, 'x': 0.04, 'xanchor':'left', 'yanchor':'top'
-                    },
-                    margin=dict(l=30, r=30, t=40, b=20)
-                )
+)
+fig_mortalidade.update_geos(fitbounds="locations", visible=False)
+fig_mortalidade.update_layout(
+    plot_bgcolor="#F9F9F9",
+    paper_bgcolor="#F9F9F9",
+    legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
+    geo=dict(bgcolor= 'rgba(0,0,0,0)'),
+    title ={
+        'text': f'Mortalidade por Estado<br><span style="font-size: 12px;">(Número de Óbitos por 100.000 Habitantes)</span>',
+        'y':0.96, 'x': 0.04, 'xanchor':'left', 'yanchor':'top'
+    },
+    margin=dict(l=30, r=30, t=40, b=20)
+)
 
 #fazendo o dashboard e criando o servidor do Flask
 app = dash.Dash(__name__, meta_tags=[{"name": "viewport", "content": "width=device-width"}])
@@ -220,7 +303,7 @@ app.layout = html.Div(
                                 ),
                                 html.P(
                                     f"""Criado com Python usando os dados mais recentes do Ministério da Saúde. 
-                                    Atualizado em {date.today().strftime("%d/%m/%Y")}."""
+                                    Atualizado em {(date.today() - timedelta(days = 1)).strftime("%d/%m/%Y")}."""
                                 ),
                             ],
                         ),
@@ -286,6 +369,32 @@ app.layout = html.Div(
         html.Div(
             [
                 html.Div(
+                    [dcc.Graph(id="grafico_mm_casos")],
+                    className="pretty_container six columns",
+                ),
+                html.Div(
+                    [dcc.Graph(id="grafico_mm_obitos")],
+                    className="pretty_container six columns",
+                ),
+            ],
+            className="row flex-display",
+        ),
+        html.Div(
+            [
+                html.Div(
+                    [dcc.Graph(id="grafico_incidencia", figure = fig_incidencia)],
+                    className="pretty_container six columns",
+                ),
+                html.Div(
+                    [dcc.Graph(id="grafico_mortalidade", figure = fig_mortalidade)],
+                    className="pretty_container six columns",
+                ),
+            ],
+            className="row flex-display",
+        ),
+        html.Div(
+            [
+                html.Div(
                     [dcc.Graph(id="grafico_casos", figure = fig_casos)],
                     className="pretty_container six columns",
                 ),
@@ -334,8 +443,18 @@ def Atualizar_Grafico_Principal(n_clicks,cidade,estado,opcao):
             df_cidade = df_cidade.loc[df_cidade['municipio'].isnull()]
     else:
         #coletando o nome da cidade e controlando para o nome ficar formatado da forma apropriada
+        #temos que fazer um controle para "de","dos","das"
+        lista_artigos = ["de","do","da","dos","das"]
         if " " in cidade:
-            cidade = string.capwords(str(cidade))
+            nomes_da_cidade = str(cidade).split()
+            cidade_formatada = ""
+            for nome in nomes_da_cidade:
+                if nome not in lista_artigos:
+                    cidade_formatada += f"{nome.capitalize()} "
+                else:
+                    cidade_formatada += f"{nome} "
+            
+            cidade = cidade_formatada[:-1]
         else:
             cidade = str(cidade).capitalize()
         #gerando o dataframe com os casos e óbitos só daquela cidade
@@ -386,17 +505,17 @@ def Atualizar_Grafico_Principal(n_clicks,cidade,estado,opcao):
                 #e criando as funções das retas auxiliares
                 num_inicial_de_casos = int(df_cidade['Casos'].head(1))
                 casos_uma_semana = [round(num_inicial_de_casos * (2 ** (x/7)),0) for x in eixo_x]
-                legendacasos1 = "Dobrando a cada semana (a partir do 1º caso)"
+                legendacasos1 = "Dobrando a cada semana (a partir do 10º caso)"
                 casos_dez_dias  = [round(num_inicial_de_casos * (2 ** (x/10)),0) for x in eixo_x]
-                legendacasos2 = "Dobrando a cada dez dias (a partir do 1º caso)"
+                legendacasos2 = "Dobrando a cada dez dias (a partir do 10º caso)"
                 casos_duas_semanas  = [round(num_inicial_de_casos * (2 ** (x/14)),0) for x in eixo_x]
-                legendacasos3 = "Dobrando a cada duas semanas (a partir do 1º caso)"
+                legendacasos3 = "Dobrando a cada duas semanas (a partir do 10º caso)"
 
             #gráfico de casos
             fig.add_trace(
                 go.Scatter(x = df_cidade['Data'], y= df_cidade['Casos'], 
-                name = "Casos", line = dict(color = 'red',width = 3.5), 
-                fill = 'tozeroy', fillcolor = 'rgba(255,0,0,0.1)')
+                name = "Casos", line = dict(color = 'rgb(0,0,143)',width = 5), 
+                fill = 'tozeroy', fillcolor = 'rgba(0,0,143,0.1)')
             )
             ##criando as linhas de cenários
             #caso seja uma UF
@@ -550,8 +669,8 @@ def Atualizar_Grafico_Principal(n_clicks,cidade,estado,opcao):
             #gráfico de óbitos
             fig.add_trace(
                 go.Scatter(x = df_cidade['Data'], y= df_cidade['Óbitos'], 
-                name = "Óbitos", line = dict(color = 'blue',width = 3.5), 
-                fill = 'tozeroy', fillcolor = 'rgba(0,0,255,0.1)')
+                name = "Óbitos", line = dict(color = 'rgb(143,0,0)',width = 5), 
+                fill = 'tozeroy', fillcolor = 'rgba(143,0,0,0.1)')
             )
             #criando as linhas de cenários
             if num_de_mortes > 0:
@@ -669,6 +788,117 @@ def Atualizar_Grafico_Principal(n_clicks,cidade,estado,opcao):
 
         return fig, erro, novos_casos, num_de_casos, incidencia, novos_obitos, num_de_mortes, mortalidade, letalidade
 
-#rodando o servidor
+##criando a funcao pra atualizar os graficos de novos casos e óbitos
+@app.callback(
+    [Output('grafico_mm_casos','figure'),
+    Output('grafico_mm_obitos','figure')],
+    [Input('botao_verificar','n_clicks')],
+    [State('cidade_input','value'),
+    State('opcao_de_estados','value'),]
+)
+def Atualizar_Graficos_Secundarios(n_clicks,cidade,estado):
+    #if para caso o Brasil ou um UF seja selecionada:
+    if cidade == "":
+        if estado == "Brasil":
+            df_cidade = df.loc[df['regiao'] == estado]
+            titulo_casos = "Série de Novos Casos no Brasil"
+            titulo_obitos = "Série de Novos Óbitos no Brasil"
+        else:
+            df_cidade = df.loc[df['Estado'] == estado]
+            df_cidade = df_cidade.loc[df_cidade['municipio'].isnull()]
+            estado = lista_estados[lista_estados_sigla.index(estado)]
+            titulo_casos = f"Série de Novos Casos em {estado}"
+            titulo_obitos = f"Série de Novos Óbitos em {estado}"
+    else:
+        #coletando o nome da cidade e controlando para o nome ficar formatado da forma apropriada
+        #temos que fazer um controle para "de","dos","das"
+        lista_artigos = ["de","do","da","dos","das"]
+        if " " in cidade:
+            nomes_da_cidade = str(cidade).split()
+            cidade_formatada = ""
+            for nome in nomes_da_cidade:
+                if nome not in lista_artigos:
+                    cidade_formatada += f"{nome.capitalize()} "
+                else:
+                    cidade_formatada += f"{nome} "
+            
+            cidade = cidade_formatada[:-1]
+        else:
+            cidade = str(cidade).capitalize()
+        #gerando o dataframe com os casos e óbitos só daquela cidade
+        df_cidade = df.loc[df['municipio'] == cidade]
+        df_cidade =df_cidade.loc[df_cidade['Estado'] == estado]
+        titulo_casos = f"Série de Novos Casos em {cidade}-{estado}"
+        titulo_obitos = f"Série de Novos Óbitos em {cidade}-{estado}"
+
+    #controle de erros
+    if df_cidade.empty == True:
+        fig_mm_casos = {}
+        fig_mm_obitos = {}
+        return fig_mm_casos, fig_mm_obitos
+    else: #se está tudo certo
+        #recalculando as medias moveis para ficarem certinhas no início da série
+        df_cidade['mediamovelcasos'] = df_cidade['casosNovos'].rolling(7).mean()
+        df_cidade['mediamovelobitos'] = df_cidade['obitosNovos'].rolling(7).mean()
+
+        df_cidade.rename({'mediamovelcasos':'Média Móvel de Novos Casos','mediamovelobitos':'Média Móvel de Novos Óbitos',
+        'casosNovos':'Novos Casos','obitosNovos':'Novos Óbitos'}, axis = 1, inplace = True)
+
+        ##criando o objeto gráfico dos novos casos
+        fig_mm_casos = go.Figure()
+        #gráfico de novos casos
+        fig_mm_casos.add_trace(
+            go.Bar(x = df_cidade['Data'], y = df_cidade['Novos Casos'], 
+            name = "Novos Casos"
+            )
+        ) 
+        fig_mm_casos.update_traces(marker_color='rgb(143,180,225)')
+        #adicionando a linha da média móvel
+        fig_mm_casos.add_trace(
+            go.Scatter(
+                x = df_cidade['Data'], y = df_cidade['Média Móvel de Novos Casos'],
+                name = "Média Móvel de Novos Casos", line = dict(color = 'rgb(0,0,143)',width = 4)
+            )
+        )
+        fig_mm_casos.update_layout(
+            plot_bgcolor="#F9F9F9",
+            paper_bgcolor="#F9F9F9",
+            showlegend = False, 
+            title ={
+                'text': titulo_casos,
+                'y':0.96, 'x': 0.04, 'xanchor':'left', 'yanchor':'top'
+            },
+            margin=dict(l=30, r=30, t=40, b=20)
+        )
+        
+        ##criando o objetivo gráfico de novos óbitos
+        fig_mm_obitos = go.Figure()
+        #gráfico de novos casos
+        fig_mm_obitos.add_trace(
+            go.Bar(x = df_cidade['Data'], y = df_cidade['Novos Óbitos'], 
+            name = "Novos Óbitos"
+            )
+        ) 
+        fig_mm_obitos.update_traces(marker_color='rgb(225,180,143)')
+        #adicionando a linha da média móvel
+        fig_mm_obitos.add_trace(
+            go.Scatter(
+                x = df_cidade['Data'], y = df_cidade['Média Móvel de Novos Óbitos'],
+                name = "Média Móvel de Novos Óbitos", line = dict(color = 'rgb(143,0,0)',width = 4)
+            )
+        )
+        fig_mm_obitos.update_layout(
+            plot_bgcolor="#F9F9F9",
+            paper_bgcolor="#F9F9F9",
+            showlegend = False, 
+            title ={
+                'text': titulo_obitos,
+                'y':0.96, 'x': 0.04, 'xanchor':'left', 'yanchor':'top'
+            },
+            margin=dict(l=30, r=30, t=40, b=20)
+        )
+        return fig_mm_casos, fig_mm_obitos
+    
+##rodando o servidor
 if __name__ == '__main__':
     app.run_server(debug=True)

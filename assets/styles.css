@@ -104,7 +104,9 @@ body {
   flex: 1;
 }
 
-#grafico_casos {
+#grafico_incidencia,
+#grafico_casos,
+#grafico_mm_casos {
   width: calc(100% - 30px);
   position: absolute;
 }
