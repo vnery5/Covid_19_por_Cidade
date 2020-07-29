@@ -117,7 +117,7 @@ fig_casos.update_layout(
     paper_bgcolor="#F9F9F9",
     geo=dict(bgcolor='rgba(0,0,0,0)'),
     title ={
-        'text': f'Situação da Média Móvel de Casos por UF',
+        'text': f'Evolução de Casos por UF',
         'y':0.96, 'x': 0.04, 'xanchor':'left', 'yanchor':'top'
     },
     margin=dict(l=30, r=30, t=40, b=20)
@@ -138,7 +138,7 @@ fig_obitos.update_layout(
     paper_bgcolor="#F9F9F9",
     geo=dict(bgcolor='rgba(0,0,0,0)'),
     title ={
-        'text': f'Situação da Média Móvel de Óbitos por UF',
+        'text': f'Evolução Óbitos por UF',
         'y':0.96, 'x': 0.04, 'xanchor':'left', 'yanchor':'top'
     },
     margin=dict(l=30, r=30, t=40, b=20)
@@ -281,7 +281,7 @@ app.layout = html.Div(
                             style = {'align':'center','justifyContent':'center'}
                         ),
                         html.P(
-                            "Para atualizar o gráfico com os casos/óbitos do município escolhido, aperte o botão abaixo:",
+                            "Para atualizar os gráficos com os casos/óbitos do município/estado escolhido, aperte o botão abaixo:",
                             className = "control_label"
                         ),
                         html.Button( #botão de verificar
@@ -311,7 +311,7 @@ app.layout = html.Div(
                     className="pretty_container four columns",
                     id="cross-filter-options",
                 ),
-                html.Div( #criando a divisão maior, na parte direita datela
+                html.Div( #criando a divisão maior, na parte direita da tela
                     [
                         html.Div( #divisão de cima, que irá conter as estatísticas
                             [
