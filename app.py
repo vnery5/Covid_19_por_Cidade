@@ -55,10 +55,8 @@ lista_estados = [
 
 ##criando o dataset que servira de base para os mapas
 df_estados = df.loc[(df['Data'] == df['Data'].max() - pd.DateOffset(14)) | (df['Data'] == df['Data'].max())]
-#pegando apenas os estados
-df_estados = df_estados.head(56)
-#excluindo a linha do Brasil
-df_estados = df_estados.tail(54)
+#pegando apenas os estados e excluindo a linha do Brasil
+df_estados = df_estados.head(56).tail(54)
 
 #calculando a variacao das medias moveis de duas semanas
 df_estados['mediamovelcasos1'] = df_estados['mediamovelcasos'].shift(1)
@@ -66,7 +64,7 @@ df_estados['mediamovelobitos1'] = df_estados['mediamovelobitos'].shift(1)
 df_estados['Variação dos casos frente a média móvel de duas semanas atrás'] = round((df_estados['mediamovelcasos']/df_estados['mediamovelcasos1'] - 1)*100,2)
 df_estados['Variação dos óbitos frente a média móvel de duas semanas atrás']= round((df_estados['mediamovelobitos']/df_estados['mediamovelobitos1'] - 1)*100,2)
 
-#pegando apenas os últimos valores
+#pegando apenas valores referentes a ultima data disponível
 df_estados =df_estados.loc[df_estados['Data'] == df_estados['Data'].max()]
 
 #determinando qual a situação de uma UF
@@ -105,6 +103,7 @@ fig_casos = px.choropleth(
     scope="south america",
     hover_data = ['Variação dos casos frente a média móvel de duas semanas atrás']
 )
+
 fig_casos.update_geos(fitbounds="locations", visible=False)
 fig_casos.update_layout(
     plot_bgcolor="#F9F9F9",
@@ -224,7 +223,7 @@ app.layout = html.Div(
                 html.Div(
                     [
                         html.A(
-                            html.Button("Mais dados sobre a Covid-19 (Brasil.IO)"), #botão superior direito
+                            html.Button("Mais dados da Covid-19 (Brasil.IO)"), #botão superior direito
                             href="https://brasil.io/covid19/",
                             target='_blank',
                         )
@@ -433,8 +432,7 @@ def Atualizar_Grafico_Principal(n_clicks,cidade,estado,opcao):
         if estado == "Brasil":
             df_cidade = df.loc[df['regiao'] == estado]
         else:
-            df_cidade = df.loc[df['Estado'] == estado]
-            df_cidade = df_cidade.loc[df_cidade['municipio'].isnull()]
+            df_cidade = df.loc[(df['Estado'] == estado) & (df['municipio'].isnull())]
     else:
         #coletando o nome da cidade e controlando para o nome ficar formatado da forma apropriada
         #temos que fazer um controle para "de","dos","das"
@@ -452,8 +450,7 @@ def Atualizar_Grafico_Principal(n_clicks,cidade,estado,opcao):
         else:
             cidade = str(cidade).capitalize()
         #gerando o dataframe com os casos e óbitos só daquela cidade
-        df_cidade = df.loc[df['municipio'] == cidade]
-        df_cidade =df_cidade.loc[df_cidade['Estado'] == estado]
+        df_cidade = df.loc[(df['municipio'] == cidade) & (df['Estado'] == estado)]
 
     #controle de erros
     if df_cidade.empty == True:
@@ -587,49 +584,11 @@ def Atualizar_Grafico_Principal(n_clicks,cidade,estado,opcao):
                     margin=dict(l=30, r=30, t=40, b=20)
                 )
 
-            ##ajustando a posição da legenda, dando título à figura e ajustando suas dimensões
-            #caso a pessoa selecione uma UF ou o Brasil:
-            if cidade == "":
-                if estado == "Brasil":
-                    fig.update_layout(
-                        plot_bgcolor="#F9F9F9",
-                        paper_bgcolor="#F9F9F9",
-                        legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
-                        title ={
-                            'text': f"Número de Casos no {estado} ({data_atual})",
-                            'y':0.96, 'x': 0.96, 'xanchor':'right', 'yanchor':'top'
-                        },
-                        margin=dict(l=30, r=30, t=40, b=20)
-                    )
-                else:
-                    uf = lista_estados[lista_estados_sigla.index(estado)]
-                    fig.update_layout(
-                        plot_bgcolor="#F9F9F9",
-                        paper_bgcolor="#F9F9F9",
-                        legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
-                        title ={
-                            'text': f"Número de Casos em {uf} ({data_atual})",
-                            'y':0.96, 'x': 0.96, 'xanchor':'right', 'yanchor':'top'
-                        },
-                        margin=dict(l=30, r=30, t=40, b=20)
-                    )
-            #caso seja um munícipio
-            else:
-                fig.update_layout(
-                    plot_bgcolor="#F9F9F9",
-                    paper_bgcolor="#F9F9F9",
-                    legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
-                    title ={
-                        'text': f"Número de Casos em {cidade}-{uf} ({data_atual})",
-                        'y':0.96, 'x': 0.96, 'xanchor':'right', 'yanchor':'top'
-                    },
-                    margin=dict(l=30, r=30, t=40, b=20)
-                )
-
         else:
             #caso a pessoa selecione uma UF ou o Brasil:
             if cidade == "":
                 if estado == "Brasil":
+                    #se for o Brasil, calcular as linhas de cenário a partir da milésima morte
                     df_cidade_prim_morte = df_cidade.loc[df_cidade['Óbitos'] > 1000]
                     num_inicial_de_obitos = int(df_cidade_prim_morte['Óbitos'].head(1))
                     obitos_uma_semana = [round(num_inicial_de_obitos * (2 ** (x/7)),0) for x in eixo_x]
@@ -639,6 +598,7 @@ def Atualizar_Grafico_Principal(n_clicks,cidade,estado,opcao):
                     obitos_duas_semanas  = [round(num_inicial_de_obitos * (2 ** (x/14)),0) for x in eixo_x]
                     legendaobitos3 = "Dobrando a cada duas semanas (a partir do 1000º óbito)"
                 else:
+                    #se for uma estado, a partir do 100º óbito
                     df_cidade_prim_morte = df_cidade.loc[df_cidade['Óbitos'] > 100]
                     num_inicial_de_obitos = int(df_cidade_prim_morte['Óbitos'].head(1))
                     obitos_uma_semana = [round(num_inicial_de_obitos * (2 ** (x/7)),0) for x in eixo_x]
@@ -649,6 +609,7 @@ def Atualizar_Grafico_Principal(n_clicks,cidade,estado,opcao):
                     legendaobitos3 = "Dobrando a cada duas semanas (a partir do 100º óbito)"
                 
             else:
+                #se for um municipio, a partir do 1º óbito
                 #capturando o número inicial de óbitos (referente à primeira data disponível) e criando as funções das retas auxiliares
                 if num_de_mortes > 0:
                     df_cidade_prim_morte = df_cidade.loc[df_cidade['Óbitos'] > 0]
@@ -798,8 +759,7 @@ def Atualizar_Graficos_Secundarios(n_clicks,cidade,estado):
             titulo_casos = "Série de Novos Casos no Brasil"
             titulo_obitos = "Série de Novos Óbitos no Brasil"
         else:
-            df_cidade = df.loc[df['Estado'] == estado]
-            df_cidade = df_cidade.loc[df_cidade['municipio'].isnull()]
+            df_cidade = df.loc[(df['Estado'] == estado) & (df['municipio'].isnull())]
             estado = lista_estados[lista_estados_sigla.index(estado)]
             titulo_casos = f"Série de Novos Casos em {estado}"
             titulo_obitos = f"Série de Novos Óbitos em {estado}"
@@ -820,8 +780,7 @@ def Atualizar_Graficos_Secundarios(n_clicks,cidade,estado):
         else:
             cidade = str(cidade).capitalize()
         #gerando o dataframe com os casos e óbitos só daquela cidade
-        df_cidade = df.loc[df['municipio'] == cidade]
-        df_cidade =df_cidade.loc[df_cidade['Estado'] == estado]
+        df_cidade = df.loc[(df['municipio'] == cidade) & (df['Estado'] == estado)]
         titulo_casos = f"Série de Novos Casos em {cidade}-{estado}"
         titulo_obitos = f"Série de Novos Óbitos em {cidade}-{estado}"
 
