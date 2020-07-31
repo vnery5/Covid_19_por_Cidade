@@ -156,7 +156,7 @@ fig_incidencia.update_layout(
     geo=dict(bgcolor='rgba(0,0,0,0)'),
     legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
     title ={
-        'text': f'Incidência por Estado<br><span style="font-size: 12px;">(Número de Casos por 100.000 Habitantes)</span>',
+        'text': f'Incidência por UF<br><span style="font-size: 12px;">(Número de Casos por 100.000 Habitantes)</span>',
         'y':0.96, 'x': 0.04, 'xanchor':'left', 'yanchor':'top'
     },
     margin=dict(l=30, r=30, t=40, b=20)
@@ -176,7 +176,7 @@ fig_mortalidade.update_layout(
     legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
     geo=dict(bgcolor= 'rgba(0,0,0,0)'),
     title ={
-        'text': f'Mortalidade por Estado<br><span style="font-size: 12px;">(Número de Óbitos por 100.000 Habitantes)</span>',
+        'text': f'Mortalidade por UF<br><span style="font-size: 12px;">(Número de Óbitos por 100.000 Habitantes)</span>',
         'y':0.96, 'x': 0.04, 'xanchor':'left', 'yanchor':'top'
     },
     margin=dict(l=30, r=30, t=40, b=20)
@@ -195,7 +195,7 @@ app.layout = html.Div(
                 html.Div(
                     [
                         html.A(
-                            html.Button("GitHub"), #botão superior esquerdo
+                            html.Button("Repositório GitHub"), #botão superior esquerdo
                             href="https://github.com/vnery5/Covid_19_por_Cidade",
                             target='_blank', #abrir em uma nova aba
                         )
@@ -430,9 +430,22 @@ def Atualizar_Grafico_Principal(n_clicks,cidade,estado,opcao):
     #if para caso o Brasil ou um UF seja selecionada:
     if cidade == "":
         if estado == "Brasil":
+            #fazendo o slice do dataframe
             df_cidade = df.loc[df['regiao'] == estado]
+
+            #criando variaveis para fazer o titulo dos gráficos
+            data_atual = df_cidade['Data'].dt.strftime('%d/%m/%Y').values.tolist()[-1]
+            titulo_casos = f"Número de Casos no {estado} ({data_atual})"
+            titulo_obitos = f"Número de Óbitos no {estado} ({data_atual})"
         else:
+            #fazendo o slice do dataframe
             df_cidade = df.loc[(df['Estado'] == estado) & (df['municipio'].isnull())]
+
+            #criando variaveis para fazer o titulo dos gráficos
+            data_atual = df_cidade['Data'].dt.strftime('%d/%m/%Y').values.tolist()[-1]
+            uf = lista_estados[lista_estados_sigla.index(estado)]
+            titulo_casos = f"Número de Casos em {uf} ({data_atual})"
+            titulo_obitos = f"Número de Óbitos em {uf} ({data_atual})"
     else:
         #coletando o nome da cidade e controlando para o nome ficar formatado da forma apropriada
         #temos que fazer um controle para "de","dos","das"
@@ -445,12 +458,18 @@ def Atualizar_Grafico_Principal(n_clicks,cidade,estado,opcao):
                     cidade_formatada += f"{nome.capitalize()} "
                 else:
                     cidade_formatada += f"{nome} "
-            
+            #tirando o espaço que fica no final do nome
             cidade = cidade_formatada[:-1]
         else:
             cidade = str(cidade).capitalize()
+
         #gerando o dataframe com os casos e óbitos só daquela cidade
         df_cidade = df.loc[(df['municipio'] == cidade) & (df['Estado'] == estado)]
+
+        #criando variaveis para achar o titulo do grafico
+        data_atual = df_cidade['Data'].dt.strftime('%d/%m/%Y').values.tolist()[-1]
+        titulo_casos = f"Número de Casos em {cidade}-{estado} ({data_atual})"
+        titulo_obitos = f"Número de Óbitos em {cidade}-{estado} ({data_atual})"
 
     #controle de erros
     if df_cidade.empty == True:
@@ -461,7 +480,6 @@ def Atualizar_Grafico_Principal(n_clicks,cidade,estado,opcao):
     else:
         #se deu tudo certo, gerar o gráfico
         erro = ""
-        uf = str(df_cidade['Estado'].values.tolist()[0])
 
         #capturando e formatando todas as datas desde que a cidade registrou o 1º caso
         datas = df_cidade['Data'].dt.strftime('%d/%m/%Y').values.tolist()
@@ -469,8 +487,6 @@ def Atualizar_Grafico_Principal(n_clicks,cidade,estado,opcao):
         num_dias = len(datas)
         #fazendo uma array [1,2…,numero de dias]
         eixo_x = np.arange(num_dias)
-        #capturando a data atual
-        data_atual = datas[num_dias - 1]
 
         #capturando o número atual acumulado de casos e mortes da cidade
         num_de_casos = int(df_cidade['Casos'].tail(1))
@@ -514,7 +530,7 @@ def Atualizar_Grafico_Principal(n_clicks,cidade,estado,opcao):
                 fig.add_trace(
                     go.Scatter(x = df_cidade_prim_caso['Data'], y= casos_uma_semana, 
                     name = legendacasos1, 
-                    line = dict(color = 'black',width = 3, dash = 'dot')) #formatando o nome da linha e o estilo da linha
+                    line = dict(color = 'black',width = 3, dash = 'dot')) #formatando o nome e o estilo da linha
                 )
                 fig.add_trace(
                     go.Scatter(x = df_cidade_prim_caso['Data'], y= casos_dez_dias, 
@@ -530,7 +546,7 @@ def Atualizar_Grafico_Principal(n_clicks,cidade,estado,opcao):
                 fig.add_trace(
                     go.Scatter(x = df_cidade['Data'], y= casos_uma_semana, 
                     name = legendacasos1, 
-                    line = dict(color = 'black',width = 3, dash = 'dot')) #formatando o nome da linha e o estilo da linha
+                    line = dict(color = 'black',width = 3, dash = 'dot')) #formatando o nome e o estilo da linha
                 )
                 fig.add_trace(
                     go.Scatter(x = df_cidade['Data'], y= casos_dez_dias, 
@@ -546,43 +562,16 @@ def Atualizar_Grafico_Principal(n_clicks,cidade,estado,opcao):
             fig.update_yaxes(title_text = "Casos", range = [0, 1.1*num_de_casos])
 
             ##ajustando a posição da legenda, dando título à figura e ajustando suas dimensões
-            #caso a pessoa selecione uma UF ou o Brasil:
-            if cidade == "":
-                if estado == "Brasil":
-                    fig.update_layout(
-                        plot_bgcolor="#F9F9F9",
-                        paper_bgcolor="#F9F9F9",
-                        legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
-                        title ={
-                            'text': f"Número de Casos no {estado} ({data_atual})",
-                            'y':0.96, 'x': 0.96, 'xanchor':'right', 'yanchor':'top'
-                        },
-                        margin=dict(l=30, r=30, t=40, b=20)
-                    )
-                else:
-                    uf = lista_estados[lista_estados_sigla.index(estado)]
-                    fig.update_layout(
-                        plot_bgcolor="#F9F9F9",
-                        paper_bgcolor="#F9F9F9",
-                        legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
-                        title ={
-                            'text': f"Número de Casos em {uf} ({data_atual})",
-                            'y':0.96, 'x': 0.96, 'xanchor':'right', 'yanchor':'top'
-                        },
-                        margin=dict(l=30, r=30, t=40, b=20)
-                    )
-            #caso seja um munícipio
-            else:
-                fig.update_layout(
-                    plot_bgcolor="#F9F9F9",
-                    paper_bgcolor="#F9F9F9",
-                    legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
-                    title ={
-                        'text': f"Número de Casos em {cidade}-{uf} ({data_atual})",
-                        'y':0.96, 'x': 0.96, 'xanchor':'right', 'yanchor':'top'
-                    },
-                    margin=dict(l=30, r=30, t=40, b=20)
-                )
+            fig.update_layout(
+                plot_bgcolor="#F9F9F9",
+                paper_bgcolor="#F9F9F9",
+                legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
+                title ={
+                    'text': titulo_casos,
+                    'y':0.96, 'x': 0.96, 'xanchor':'right', 'yanchor':'top'
+                },
+                margin=dict(l=30, r=30, t=40, b=20)
+            )
 
         else:
             #caso a pessoa selecione uma UF ou o Brasil:
@@ -649,43 +638,16 @@ def Atualizar_Grafico_Principal(n_clicks,cidade,estado,opcao):
             fig.update_yaxes(title_text = "Mortes", range = [0, 1.1*num_de_mortes])
 
             ##ajustando a posição da legenda, dando título à figura e ajustando suas dimensões
-            #caso a pessoa esteja selecionando o Brasil ou uma UF:
-            if cidade == "":
-                if estado == "Brasil":
-                    fig.update_layout(
-                        plot_bgcolor="#F9F9F9",
-                        paper_bgcolor="#F9F9F9",
-                        legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
-                        title ={
-                            'text': f"Número de Óbitos no {estado} ({data_atual})",
-                            'y':0.96, 'x': 0.96, 'xanchor':'right', 'yanchor':'top'
-                        },
-                        margin=dict(l=30, r=30, t=40, b=20)
-                    )
-                else:
-                    uf = lista_estados[lista_estados_sigla.index(estado)]
-                    fig.update_layout(
-                        plot_bgcolor="#F9F9F9",
-                        paper_bgcolor="#F9F9F9",
-                        legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
-                        title ={
-                            'text': f"Número de Óbitos em {uf} ({data_atual})",
-                            'y':0.96, 'x': 0.96, 'xanchor':'right', 'yanchor':'top'
-                        },
-                        margin=dict(l=30, r=30, t=40, b=20)
-                    )
-            #no caso de um munícipio ter sido selecionado
-            else:
-                fig.update_layout(
-                    plot_bgcolor="#F9F9F9",
-                    paper_bgcolor="#F9F9F9",
-                    legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
-                    title ={
-                        'text': f"Número de Óbitos em {cidade}-{uf} ({data_atual})",
-                        'y':0.96, 'x': 0.96, 'xanchor':'right', 'yanchor':'top'
-                    },
-                    margin=dict(l=30, r=30, t=40, b=20)
-                )
+            fig.update_layout(
+                plot_bgcolor="#F9F9F9",
+                paper_bgcolor="#F9F9F9",
+                legend_orientation = 'h', legend = dict(x = -0.1,y = -0.2), 
+                title ={
+                    'text': titulo_obitos,
+                    'y':0.96, 'x': 0.96, 'xanchor':'right', 'yanchor':'top'
+                },
+                margin=dict(l=30, r=30, t=40, b=20)
+            )
 
         #ajustando a range do eixo x e criando + formatando os botões de seleção temporal
         fig.update_xaxes(
@@ -706,12 +668,17 @@ def Atualizar_Grafico_Principal(n_clicks,cidade,estado,opcao):
         )
         
         #calculando os indicadores e formatando as numerações usando o módulo locale
+        #como a formatação padrão é dos EUA, temos que substituir "," por "."
         novos_casos = f"{int(df_cidade['Casos'].tail(1)) - int(df_cidade['Casos'].tail(2).head(1)):n}"
         novos_casos = novos_casos.replace(",",".")
 
         novos_obitos = f"{int(df_cidade['Óbitos'].tail(1)) - int(df_cidade['Óbitos'].tail(2).head(1)):n}"
         novos_obitos = novos_obitos.replace(",",".")
 
+        #para incidencia e mortalidade é mais complicado;
+        #se eles forem maior que 1000, apenas usar o replace não dá certo
+        #assim, temos que separar a parte inteira da parte decimal (nesses casos)
+        #usar o replace na parte inteira e depois juntá-la novamente com a parte decimal
         incidencia = f"{np.around(num_de_casos*100000/int(df_cidade['populacao'].head(1)),2)}"
         if float(incidencia) > 1000:
             incidencia_int = math.floor(float(incidencia))
@@ -756,13 +723,13 @@ def Atualizar_Graficos_Secundarios(n_clicks,cidade,estado):
     if cidade == "":
         if estado == "Brasil":
             df_cidade = df.loc[df['regiao'] == estado]
-            titulo_casos = "Série de Novos Casos no Brasil"
-            titulo_obitos = "Série de Novos Óbitos no Brasil"
+            titulo_casos = "Número de Novos Casos no Brasil"
+            titulo_obitos = "Número de Novos Óbitos no Brasil"
         else:
             df_cidade = df.loc[(df['Estado'] == estado) & (df['municipio'].isnull())]
             estado = lista_estados[lista_estados_sigla.index(estado)]
-            titulo_casos = f"Série de Novos Casos em {estado}"
-            titulo_obitos = f"Série de Novos Óbitos em {estado}"
+            titulo_casos = f"Número de Novos Casos em {estado}"
+            titulo_obitos = f"Número de Novos Óbitos em {estado}"
     else:
         #coletando o nome da cidade e controlando para o nome ficar formatado da forma apropriada
         #temos que fazer um controle para "de","dos","das"
@@ -781,8 +748,8 @@ def Atualizar_Graficos_Secundarios(n_clicks,cidade,estado):
             cidade = str(cidade).capitalize()
         #gerando o dataframe com os casos e óbitos só daquela cidade
         df_cidade = df.loc[(df['municipio'] == cidade) & (df['Estado'] == estado)]
-        titulo_casos = f"Série de Novos Casos em {cidade}-{estado}"
-        titulo_obitos = f"Série de Novos Óbitos em {cidade}-{estado}"
+        titulo_casos = f"Número de Novos Casos em {cidade}-{estado}"
+        titulo_obitos = f"Número de Novos Óbitos em {cidade}-{estado}"
 
     #controle de erros
     if df_cidade.empty == True:
