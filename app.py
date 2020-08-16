@@ -97,7 +97,7 @@ df_estados['Variação dos óbitos frente a média móvel de duas semanas atrás
 fig_casos = px.choropleth(
     df_estados, geojson=estados_geojson, locations='Estado',
     color = 'Situação (Casos)',
-    color_discrete_sequence=["rgb(0,0,143)", "rgb(0,0,255)", "rgb(180,230,255)"],
+    color_discrete_sequence=["#08306B", "#3383BE", "#ABD0E6"],
     category_orders = {"Situação (Casos)":['Crescente','Estável','Decrescente']},
     featureidkey="properties.UF",
     scope="south america",
@@ -119,7 +119,7 @@ fig_casos.update_layout(
 fig_obitos = px.choropleth(
     df_estados, geojson=estados_geojson, locations='Estado',
     color = 'Situação (Óbitos)',
-    color_discrete_sequence=["rgb(143,0,0)", "rgb(255,0,0)", "rgb(255,230,230)"],
+    color_discrete_sequence=["#A71016", "#F86044", "#FEDDCE"],
     category_orders = {"Situação (Óbitos)":['Crescente','Estável','Decrescente']},
     featureidkey="properties.UF",
     scope="south america",
@@ -685,6 +685,8 @@ def Atualizar_Grafico_Principal(n_clicks,cidade,estado,opcao):
             resto = round(float(incidencia) - incidencia_int,2)
             incidencia_int = f"{incidencia_int:n}"
             incidencia_int = incidencia_int.replace(",",".")
+            if incidencia_int[0] == ".":
+                incidencia_int = incidencia_int[1]
             incidencia = f"{incidencia_int},{str(resto)[-2:]}"
         else:
             incidencia = incidencia.replace(".",",")
@@ -695,6 +697,8 @@ def Atualizar_Grafico_Principal(n_clicks,cidade,estado,opcao):
             resto = round(float(mortalidade) - mortalidade_int,2)
             mortalidade_int = f"{mortalidade_int:n}"
             mortalidade_int = mortalidade_int.replace(",",".")
+            if mortalidade_int[0] == ".":
+                mortalidade_int = mortalidade_int[1]
             mortalidade = f"{mortalidade_int},{str(resto)[-2:]}"
         else:
             mortalidade = mortalidade.replace(".",",")
