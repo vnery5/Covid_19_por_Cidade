@@ -11,7 +11,7 @@ A grande inspiração para o design foi [este projeto](https://dash-gallery.plot
 
 ## Acesso online
 
-O painel pode ser visualizado na URL http://dadoscovid19.herokuapp.com
+O painel pode ser visualizado na URL http://dadoscovid19.herokuapp.com, sendo que demora cerca de 30 segundos para carregar todos os dados.
 
 ## Prints do dashboard
 
